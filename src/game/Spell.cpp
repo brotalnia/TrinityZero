@@ -651,9 +651,6 @@ void Spell::prepareDataForTriggerSystem()
             case SPELLFAMILY_PALADIN: // For Holy Shock triggers need do it
                 if (m_spellInfo->SpellFamilyFlags & 0x0001000000200000LL) m_canTrigger = true;
             break;
-            case SPELLFAMILY_ROGUE: // mutilate mainhand + offhand
-                if (m_spellInfo->SpellFamilyFlags & 0x600000000LL) m_canTrigger = true;
-            break;
         }
     }
     // Do not trigger from item cast spell except taming rod
@@ -2088,8 +2085,8 @@ void Spell::prepare(SpellCastTargets * targets, Aura* triggeredByAura)
     SpellEvent* Event = new SpellEvent(this);
     m_caster->m_Events.AddEvent(Event, m_caster->m_Events.CalculateTime(1));
 
-    //Prevent casting at cast another spell (ServerSide check)
-    if(m_caster->IsNonMeleeSpellCasted(false, true , true))
+    // Prevent casting at cast another spell (ServerSide check)
+    if (!m_IsTriggeredSpell && m_caster->IsNonMeleeSpellCasted(false, true, true))
     {
         SendCastResult(SPELL_FAILED_SPELL_IN_PROGRESS);
         finish(false);

@@ -142,12 +142,15 @@ struct TRINITY_DLL_DECL mob_restless_soulAI : public ScriptedAI
     void JustSummoned(Creature *summoned)
     {
         summoned->CastSpell(summoned,SPELL_SOUL_FREED,false);
+
+		if (Player* player = (Player*) Unit::GetUnit(*m_creature,Tagger))
+			summoned->GetMotionMaster()->MoveFollow(player, 0.0f, 0.0f);
     }
 
     void JustDied(Unit* Killer)
     {
         if (Tagged)
-            DoSpawnCreature(ENTRY_FREED, 0, 0, 0, 0, TEMPSUMMON_TIMED_DESPAWN, 300000);
+            DoSpawnCreature(ENTRY_FREED, m_creature->GetPositionX(), m_creature->GetPositionY(), m_creature->GetPositionZ(),  m_creature->GetOrientation(), TEMPSUMMON_TIMED_DESPAWN, 300000);
     }
 
     void UpdateAI(const uint32 diff)

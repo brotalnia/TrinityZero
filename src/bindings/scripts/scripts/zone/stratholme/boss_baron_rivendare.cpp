@@ -98,6 +98,8 @@ struct TRINITY_DLL_DECL boss_baron_rivendareAI : public ScriptedAI
         MortalStrike_Timer = 12000;
         //        RaiseDead_Timer = 30000;
         SummonSkeletons_Timer = 34000;
+		if (pInstance->GetData(TYPE_RAMSTEIN) == DONE)
+                pInstance->SetData(TYPE_BARON, NOT_STARTED);
     }
 
     void Aggro(Unit *who)
@@ -124,7 +126,7 @@ struct TRINITY_DLL_DECL boss_baron_rivendareAI : public ScriptedAI
             return;
 
         //ShadowBolt
-        if (ShadowBolt_Timer < diff)
+        if (ShadowBolt_Timer <= diff)
         {
             if (Unit* target = SelectUnit(SELECT_TARGET_RANDOM, 0))
                 DoCast(m_creature->getVictim(),SPELL_SHADOWBOLT);
@@ -133,7 +135,7 @@ struct TRINITY_DLL_DECL boss_baron_rivendareAI : public ScriptedAI
         }else ShadowBolt_Timer -= diff;
 
         //Cleave
-        if (Cleave_Timer < diff)
+        if (Cleave_Timer <= diff)
         {
             DoCast(m_creature->getVictim(),SPELL_CLEAVE);
             //13 seconds until we should cast this again
@@ -141,7 +143,7 @@ struct TRINITY_DLL_DECL boss_baron_rivendareAI : public ScriptedAI
         }else Cleave_Timer -= diff;
 
         //MortalStrike
-        if (MortalStrike_Timer < diff)
+        if (MortalStrike_Timer <= diff)
         {
             DoCast(m_creature->getVictim(),SPELL_MORTALSTRIKE);
             MortalStrike_Timer = 10000 + (rand()%15000);
@@ -155,7 +157,7 @@ struct TRINITY_DLL_DECL boss_baron_rivendareAI : public ScriptedAI
         //            }else RaiseDead_Timer -= diff;
 
         //SummonSkeletons
-        if (SummonSkeletons_Timer < diff)
+        if (SummonSkeletons_Timer <= diff)
         {
             m_creature->SummonCreature(11197,ADD_1X,ADD_1Y,ADD_1Z,ADD_1O,TEMPSUMMON_TIMED_DESPAWN,29000);
             m_creature->SummonCreature(11197,ADD_2X,ADD_2Y,ADD_2Z,ADD_2O,TEMPSUMMON_TIMED_DESPAWN,29000);

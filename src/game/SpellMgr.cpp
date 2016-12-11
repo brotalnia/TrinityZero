@@ -2384,6 +2384,14 @@ void SpellMgr::LoadSpellCustomAttr()
             spellInfo->MaxAffectedTargets = 1;
             spellInfo->EffectTriggerSpell[0] = 33760;
             break;
+		case 5308: //Execute
+		case 20658:
+		case 20660:
+		case 20661:
+		case 20662:
+			spellInfo->Attributes |= SPELL_ATTR_IMPOSSIBLE_DODGE_PARRY_BLOCK;
+            spellInfo->AttributesEx3 |= SPELL_ATTR_EX3_UNK18;                
+			break;
         default:
             break;
         }
