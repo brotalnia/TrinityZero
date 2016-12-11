@@ -303,7 +303,6 @@ void Spell::EffectEnvironmentalDMG(uint32 i)
 
 void Spell::EffectSchoolDMG(uint32 effect_idx)
 {
-
 }
 
 void Spell::SpellDamageSchoolDmg(uint32 effect_idx)
@@ -337,7 +336,6 @@ void Spell::SpellDamageSchoolDmg(uint32 effect_idx)
                     // Judgement of Command
                     case 20467:    case 20963:    case 20964:    case 20965:    case 20966:
                     {
-						damage = m_caster->SpellDamageBonus(unitTarget, m_spellInfo, damage, SPELL_DIRECT_DAMAGE);
                         if(!unitTarget->hasUnitState(UNIT_STAT_STUNNED) && m_caster->GetTypeId() == TYPEID_PLAYER)
                             { damage /= 2; }
                         break;
@@ -357,12 +355,12 @@ void Spell::SpellDamageSchoolDmg(uint32 effect_idx)
             case SPELLFAMILY_WARRIOR:
             {
                 // Bloodthirst
-                if (m_spellInfo->SpellIconID == 38 && m_spellInfo->SpellFamilyFlags & 0x2000000)
+                if (m_spellInfo->SpellIconID == 38 && m_spellInfo->SpellFamilyFlags & 0x2000000LL)
                 {
                     damage = uint32(damage * (m_caster->GetTotalAttackPowerValue(BASE_ATTACK)) / 100);
                 }
                 // Shield Slam
-                else if (m_spellInfo->SpellFamilyFlags & 0x100000000)
+                else if (m_spellInfo->SpellFamilyFlags & 0x100000000LL)
                     { damage += int32(m_caster->GetShieldBlockValue()); }
                 break;
             }
@@ -396,12 +394,22 @@ void Spell::SpellDamageSchoolDmg(uint32 effect_idx)
                     damage += int32(m_caster->GetPower(POWER_ENERGY) * multiple);
                     m_caster->SetPower(POWER_ENERGY, 0);
                 }
+				// Rake
+                else if(m_spellInfo->SpellFamilyFlags & 0x0000000000001000LL)
+                {
+                    damage += int32(m_caster->GetTotalAttackPowerValue(BASE_ATTACK) / 100);
+                }
+                // Swipe
+                else if(m_spellInfo->SpellFamilyFlags & 0x0010000000000000LL)
+                {
+                    damage += int32(m_caster->GetTotalAttackPowerValue(BASE_ATTACK)*0.08f);
+                }
                 break;
             }
             case SPELLFAMILY_ROGUE:
             {
                 // Eviscerate
-                if ((m_spellInfo->SpellFamilyFlags & 0x00020000) && m_caster->GetTypeId() == TYPEID_PLAYER)
+                if ((m_spellInfo->SpellFamilyFlags & 0x00020000LL) && m_caster->GetTypeId() == TYPEID_PLAYER)
                 {
                     if (uint32 combo = ((Player*)m_caster)->GetComboPoints())
                     {
@@ -411,30 +419,28 @@ void Spell::SpellDamageSchoolDmg(uint32 effect_idx)
                 break;
             }
             case SPELLFAMILY_HUNTER:
+                // Mongoose Bite
+                if((m_spellInfo->SpellFamilyFlags & 0x000000002) && m_spellInfo->SpellVisual==342)
+                {
+                    damage += int32(m_caster->GetTotalAttackPowerValue(BASE_ATTACK)*0.2);
+                }
+                // Arcane Shot
+                else if((m_spellInfo->Id == 3044) || (m_spellInfo->Id > 14280 && m_spellInfo->Id < 14288))
+                {
+                    damage += int32(m_caster->GetTotalAttackPowerValue(RANGED_ATTACK)*0.15);
+                }
+                //Explosive Trap Effect
+                else if(m_spellInfo->SpellFamilyFlags & 0x00000004)
+                {
+                    damage += int32(m_caster->GetTotalAttackPowerValue(RANGED_ATTACK)*0.1);
+                }
                 break;
             case SPELLFAMILY_PALADIN:
-				switch (m_spellInfo->Id)
-				{
-					// Judgement of Righteousness
-					case 20187:
-					case 20280:
-					case 20281:
-					case 20282:
-					case 20283:
-					case 20284:
-					case 20285:
-					case 20286:
-					// Holy Shock
-					case 25902:
-					case 25911:
-					case 25912:
-					{
-						damage = m_caster->SpellDamageBonus(unitTarget, m_spellInfo, damage, SPELL_DIRECT_DAMAGE);
-						break;
-					}
-				}
                 break;
         }
+
+		if(m_originalCaster && damage > 0)
+			damage = m_originalCaster->SpellDamageBonus(unitTarget, m_spellInfo, (uint32)damage, SPELL_DIRECT_DAMAGE);
 
         if (damage >= 0)
             { m_damage += damage; }
