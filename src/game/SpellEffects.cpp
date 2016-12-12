@@ -340,10 +340,13 @@ void Spell::SpellDamageSchoolDmg(uint32 effect_idx)
                             { damage /= 2; }
                         break;
                     }
-					// Judgement spell that shouldn't do damage
+					// T2 Set Bonus Judgement spell that shouldn't benefit from Spell Damage
 					case 23590:
 					{
-						damage = 0;
+						if (damage >= 0)
+							{ m_damage += damage; }
+
+						return;
 						break;
 					}
                 }
