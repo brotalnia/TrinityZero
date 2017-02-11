@@ -15,3 +15,6 @@ SET(trinityauth_STAT_SRCS
 )
 
 add_library(trinityauth STATIC ${trinityauth_STAT_SRCS})
+target_link_libraries(
+${SSLLIB}
+)

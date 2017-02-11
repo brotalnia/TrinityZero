@@ -9,7 +9,7 @@ RealmList.cpp
 RealmList.h
 )
 
-SET(trinity-realm_LINK_FLAGS "")
+SET(trinity-realm_LINK_FLAGS "-lssl -lcrypto")
 
 add_executable(trinity-realm ${trinity-realm_SRCS})
 add_definitions(
