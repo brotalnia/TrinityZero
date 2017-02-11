@@ -1,102 +1,81 @@
-# - Find MySQL
-# Find the MySQL includes and client library
-# This module defines
-#  MYSQL_INCLUDE_DIR, where to find mysql.h
-#  MYSQL_LIBRARIES, the libraries needed to use MySQL.
-#  MYSQL_FOUND, If false, do not try to use MySQL.
+# - Try to find MySQL.
+# Once done this will define:
+# MYSQL_FOUND			- If false, do not try to use MySQL.
+# MYSQL_INCLUDE_DIRS	- Where to find mysql.h, etc.
+# MYSQL_LIBRARIES		- The libraries to link against.
+# MYSQL_VERSION_STRING	- Version in a string of MySQL.
 #
-# Copyright (c) 2006, Jaroslaw Staniek, <js@iidea.pl>
-# Lot of adustmens by Michal Cihar <michal@cihar.com>
+# Created by RenatoUtsch based on eAthena implementation.
 #
-# vim: expandtab sw=4 ts=4 sts=4:
+# Please note that this module only supports Windows and Linux officially, but
+# should work on all UNIX-like operational systems too.
 #
-# Redistribution and use is allowed according to the terms of the BSD license.
+
+#=============================================================================
+# Copyright 2012 RenatoUtsch
+#
+# Distributed under the OSI-approved BSD License (the "License");
+# see accompanying file Copyright.txt for details.
+#
+# This software is distributed WITHOUT ANY WARRANTY; without even the
+# implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the License for more information.
+#=============================================================================
+# (To distribute this file outside of CMake, substitute the full
+#  License text for the above reference.)
 
 MACRO(FIND_MYSQL)
-if(UNIX) 
-    set(MYSQL_CONFIG_PREFER_PATH "$ENV{MYSQL_HOME}/bin" CACHE FILEPATH
-        "preferred path to MySQL (mysql_config)")
-    find_program(MYSQL_CONFIG mysql_config
-        ${MYSQL_CONFIG_PREFER_PATH}
-        /usr/local/mysql/bin/
-        /usr/local/bin/
-        /usr/bin/
-        )
-    
-    if(MYSQL_CONFIG) 
-        message(STATUS "Using mysql-config: ${MYSQL_CONFIG}")
-        # set INCLUDE_DIR
-        exec_program(${MYSQL_CONFIG}
-            ARGS --include
-            OUTPUT_VARIABLE MY_TMP)
+if( WIN32 )
+	find_path( MYSQL_INCLUDE_DIR
+		NAMES "mysql.h"
+		PATHS "$ENV{PROGRAMFILES}/MySQL/*/include"
+			  "$ENV{PROGRAMFILES(x86)}/MySQL/*/include"
+			  "$ENV{SYSTEMDRIVE}/MySQL/*/include" )
+	
+	find_library( MYSQL_LIBRARY
+		NAMES "mysqlclient" "mysqlclient_r"
+		PATHS "$ENV{PROGRAMFILES}/MySQL/*/lib"
+			  "$ENV{PROGRAMFILES(x86)}/MySQL/*/lib"
+			  "$ENV{SYSTEMDRIVE}/MySQL/*/lib" )
+else()
+	find_path( MYSQL_INCLUDE_DIR
+		NAMES "mysql.h"
+		PATHS "/usr/include/mysql"
+			  "/usr/local/include/mysql"
+			  "/usr/mysql/include/mysql" )
+	
+	find_library( MYSQL_LIBRARY
+		NAMES "mysqlclient" "mysqlclient_r"
+		PATHS "/lib/mysql"
+			  "/lib64/mysql"
+			  "/usr/lib/mysql"
+			  "/usr/lib64/mysql"
+			  "/usr/local/lib/mysql"
+			  "/usr/local/lib64/mysql"
+			  "/usr/mysql/lib/mysql"
+			  "/usr/mysql/lib64/mysql" )
+endif()
 
-        string(REGEX REPLACE "-I([^ ]*)( .*)?" "\\1" MY_TMP "${MY_TMP}")
 
-        set(MYSQL_ADD_INCLUDE_DIR ${MY_TMP} CACHE FILEPATH INTERNAL)
 
-        # set LIBRARY_DIR
-        exec_program(${MYSQL_CONFIG}
-            ARGS --libs_r
-            OUTPUT_VARIABLE MY_TMP)
+if( MYSQL_INCLUDE_DIR AND EXISTS "${MYSQL_INCLUDE_DIRS}/mysql_version.h" )
+	file( STRINGS "${MYSQL_INCLUDE_DIRS}/mysql_version.h"
+		MYSQL_VERSION_H REGEX "^#define[ \t]+MYSQL_SERVER_VERSION[ \t]+\"[^\"]+\".*$" )
+	string( REGEX REPLACE
+		"^.*MYSQL_SERVER_VERSION[ \t]+\"([^\"]+)\".*$" "\\1" MYSQL_VERSION_STRING
+		"${MYSQL_VERSION_H}" )
+endif()
 
-        set(MYSQL_ADD_LIBRARIES "")
+# handle the QUIETLY and REQUIRED arguments and set MYSQL_FOUND to TRUE if
+# all listed variables are TRUE
+include( FindPackageHandleStandardArgs )
+find_package_handle_standard_args( MYSQL DEFAULT_MSG
+	REQUIRED_VARS	MYSQL_LIBRARY MYSQL_INCLUDE_DIR
+	VERSION_VAR		MYSQL_VERSION_STRING )
 
-        string(REGEX MATCHALL "-l[^ ]*" MYSQL_LIB_LIST "${MY_TMP}")
-        foreach(LIB ${MYSQL_LIB_LIST})
-            string(REGEX REPLACE "[ ]*-l([^ ]*)" "\\1" LIB "${LIB}")
-            list(APPEND MYSQL_ADD_LIBRARIES "${LIB}")
-        endforeach(LIB ${MYSQL_LIBS})
+set( MYSQL_INCLUDE_DIRS ${MYSQL_INCLUDE_DIR} )
+set( MYSQL_LIBRARIES ${MYSQL_LIBRARY} )
 
-        set(MYSQL_ADD_LIBRARY_PATH "")
+mark_as_advanced( MYSQL_INCLUDE_DIR MYSQL_LIBRARY )
+ENDMACRO(FIND_MYSQL)
 
-        string(REGEX MATCHALL "-L[^ ]*" MYSQL_LIBDIR_LIST "${MY_TMP}")
-        foreach(LIB ${MYSQL_LIBDIR_LIST})
-            string(REGEX REPLACE "[ ]*-L([^ ]*)" "\\1" LIB "${LIB}")
-            list(APPEND MYSQL_ADD_LIBRARY_PATH "${LIB}")
-        endforeach(LIB ${MYSQL_LIBS})
-
-    else(MYSQL_CONFIG)
-        set(MYSQL_ADD_LIBRARIES "")
-        list(APPEND MYSQL_ADD_LIBRARIES "mysqlclient")
-    endif(MYSQL_CONFIG)
-else(UNIX)
-    set(MYSQL_ADD_INCLUDE_DIR "c:/msys/local/include" CACHE FILEPATH INTERNAL)
-    set(MYSQL_ADD_LIBRARY_PATH "c:/msys/local/lib" CACHE FILEPATH INTERNAL)
-ENDIF(UNIX)
-
-find_path(MYSQL_INCLUDE_DIR mysql.h
-    /usr/local/include
-    /usr/local/include/mysql 
-    /usr/local/mysql/include
-    /usr/local/mysql/include/mysql
-    /usr/include 
-    /usr/include/mysql
-    ${MYSQL_ADD_INCLUDE_DIR}
-)
-
-set(TMP_MYSQL_LIBRARIES "")
-
-foreach(LIB ${MYSQL_ADD_LIBRARIES})
-    find_library("MYSQL_LIBRARIES_${LIB}" NAMES ${LIB}
-        PATHS
-        ${MYSQL_ADD_LIBRARY_PATH}
-        /usr/lib/mysql
-        /usr/local/lib
-        /usr/local/lib/mysql
-        /usr/local/mysql/lib
-    )
-    list(APPEND TMP_MYSQL_LIBRARIES "${MYSQL_LIBRARIES_${LIB}}")
-endforeach(LIB ${MYSQL_ADD_LIBRARIES})
-
-set(MYSQL_LIBRARIES ${TMP_MYSQL_LIBRARIES} CACHE FILEPATH INTERNAL)
-
-if(MYSQL_INCLUDE_DIR AND MYSQL_LIBRARIES)
-    set(MYSQL_FOUND TRUE CACHE INTERNAL "MySQL found")
-    message(STATUS "Found MySQL: ${MYSQL_INCLUDE_DIR}, ${MYSQL_LIBRARIES}")
-else(MYSQL_INCLUDE_DIR AND MYSQL_LIBRARIES)
-    set(MYSQL_FOUND FALSE CACHE INTERNAL "MySQL found")
-    message(STATUS "MySQL not found.")
-endif(MYSQL_INCLUDE_DIR AND MYSQL_LIBRARIES)
-
-mark_as_advanced(MYSQL_INCLUDE_DIR MYSQL_LIBRARIES)
-ENDMACRO(FIND_MYSQL)
