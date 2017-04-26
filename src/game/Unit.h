@@ -414,11 +414,11 @@ enum UnitState
     UNIT_STAT_ROTATING        = 0x00200000,
     UNIT_STAT_EVADE           = 0x00400000,
     UNIT_STAT_MOVING          = (UNIT_STAT_ROAMING | UNIT_STAT_CHASE),
-	// not react at move in sight or other
+    // not react at move in sight or other
     UNIT_STAT_CAN_NOT_REACT   = (UNIT_STAT_STUNNED | UNIT_STAT_DIED | UNIT_STAT_CONFUSED | UNIT_STAT_FLEEING),
     UNIT_STAT_LOST_CONTROL    = (UNIT_STAT_CONFUSED | UNIT_STAT_STUNNED | UNIT_STAT_FLEEING | UNIT_STAT_CHARGING),
-	// above 2 state cases
-	UNIT_STAT_CAN_NOT_REACT_OR_LOST_CONTROL = UNIT_STAT_CAN_NOT_REACT | UNIT_STAT_LOST_CONTROL,
+    // above 2 state cases
+    UNIT_STAT_CAN_NOT_REACT_OR_LOST_CONTROL = UNIT_STAT_CAN_NOT_REACT | UNIT_STAT_LOST_CONTROL,
     UNIT_STAT_SIGHTLESS       = (UNIT_STAT_LOST_CONTROL),
     UNIT_STAT_CANNOT_AUTOATTACK     = (UNIT_STAT_LOST_CONTROL | UNIT_STAT_CASTING),
     UNIT_STAT_CANNOT_TURN     = (UNIT_STAT_LOST_CONTROL | UNIT_STAT_ROTATING),
@@ -926,7 +926,7 @@ class TRINITY_DLL_SPEC Unit : public WorldObject
 
         uint32 GetHealth()    const { return GetUInt32Value(UNIT_FIELD_HEALTH); }
         uint32 GetMaxHealth() const { return (uint32)GetFloatValue(UNIT_FIELD_MAXHEALTH); }
-		float GetHealthPercent() const { return (GetHealth()*100.0f) / GetMaxHealth(); }
+        float GetHealthPercent() const { return (GetHealth()*100.0f) / GetMaxHealth(); }
         void SetHealth(   uint32 val);
         void SetMaxHealth(uint32 val);
         int32 ModifyHealth(int32 val);
@@ -1103,7 +1103,7 @@ class TRINITY_DLL_SPEC Unit : public WorldObject
         void SendSpellNonMeleeDamageLog(Unit *target,uint32 SpellID,uint32 Damage, SpellSchoolMask damageSchoolMask,uint32 AbsorbedDamage, uint32 Resist,bool PhysicalDamage, uint32 Blocked, bool CriticalHit = false);
         void SendSpellMiss(Unit *target, uint32 spellID, SpellMissInfo missInfo);
 
-		void NearTeleportTo(float x, float y, float z, float orientation, uint32 teleportOptions = 2 | 4 | 8);
+        void NearTeleportTo(float x, float y, float z, float orientation, uint32 teleportOptions = 2 | 4 | 8);
 
         void SendMonsterStop();
         void SendMonsterMove(float NewPosX, float NewPosY, float NewPosZ, uint32 Time, Player* player = NULL);
@@ -1128,8 +1128,8 @@ class TRINITY_DLL_SPEC Unit : public WorldObject
         uint64 GetCharmerGUID() const { return GetUInt64Value(UNIT_FIELD_CHARMEDBY); }
         void SetCharmerGUID(uint64 owner) { SetUInt64Value(UNIT_FIELD_CHARMEDBY, owner); }
         uint64 GetCharmGUID() const { return  GetUInt64Value(UNIT_FIELD_CHARM); }
-		uint64 const& GetTargetGuid() const { return GetUInt64Value(UNIT_FIELD_TARGET); }
-		void SetTargetGuid(uint64 targetGuid) { SetUInt64Value(UNIT_FIELD_TARGET, targetGuid); }
+        uint64 const& GetTargetGuid() const { return GetUInt64Value(UNIT_FIELD_TARGET); }
+        void SetTargetGuid(uint64 targetGuid) { SetUInt64Value(UNIT_FIELD_TARGET, targetGuid); }
 
         uint64 GetCharmerOrOwnerGUID() const { return GetCharmerGUID() ? GetCharmerGUID() : GetOwnerGUID(); }
         uint64 GetCharmerOrOwnerOrOwnGUID() const
@@ -1439,7 +1439,7 @@ class TRINITY_DLL_SPEC Unit : public WorldObject
         MotionMaster* GetMotionMaster() { return &i_motionMaster; }
 
         bool IsStopped() const { return !(hasUnitState(UNIT_STAT_MOVING)); }
-		bool IsMoving() const { return (hasUnitState(UNIT_STAT_MOVING)); }
+        bool IsMoving() const { return (hasUnitState(UNIT_STAT_MOVING)); }
         void StopMoving();
 
         void AddUnitMovementFlag(uint32 f) { m_unit_movement_flags |= f; }

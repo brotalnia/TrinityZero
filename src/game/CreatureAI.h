@@ -89,8 +89,8 @@ class TRINITY_DLL_SPEC CreatureAI : public UnitAI
         void SelectNearestTarget(Unit *who);
 
         void SetGazeOn(Unit *target);
-		CanCastResult DoCastSpellIfCan(Unit* pTarget, uint32 uiSpell, uint32 uiCastFlags, uint64 uiOriginalCasterGUID);
-		CanCastResult DoCastSpellIfCan(Unit* pTarget, uint32 uiSpell);
+        CanCastResult DoCastSpellIfCan(Unit* pTarget, uint32 uiSpell, uint32 uiCastFlags, uint64 uiOriginalCasterGUID);
+        CanCastResult DoCastSpellIfCan(Unit* pTarget, uint32 uiSpell);
 
         Creature *DoSummon(uint32 uiEntry, const WorldLocation &pos, uint32 uiDespawntime = 30000, TempSummonType uiType = TEMPSUMMON_CORPSE_TIMED_DESPAWN);
         Creature *DoSummon(uint32 uiEntry, WorldObject *obj, float fRadius = 5.0f, uint32 uiDespawntime = 30000, TempSummonType uiType = TEMPSUMMON_CORPSE_TIMED_DESPAWN);
@@ -135,8 +135,8 @@ class TRINITY_DLL_SPEC CreatureAI : public UnitAI
         // Called when spell hits a target
         virtual void SpellHitTarget(Unit* target, const SpellEntry*) {}
 
-		// Helper functions for cast spell
-		virtual CanCastResult CanCastSpell(Unit* pTarget, const SpellEntry *pSpell, bool isTriggered);
+        // Helper functions for cast spell
+        virtual CanCastResult CanCastSpell(Unit* pTarget, const SpellEntry *pSpell, bool isTriggered);
 
         // Called when the creature is target of hostile action: swing, hostile spell landed, fear/etc)
         //virtual void AttackedBy(Unit* attacker);

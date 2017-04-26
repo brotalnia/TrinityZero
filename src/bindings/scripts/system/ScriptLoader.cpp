@@ -562,7 +562,7 @@ void AddScripts()
 
     //Onyxia's Lair
     AddSC_boss_onyxia();
-	AddSC_instance_onyxia_lair();
+    AddSC_instance_onyxia_lair();
 
     //Orgrimmar
     AddSC_orgrimmar();

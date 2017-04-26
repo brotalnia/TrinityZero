@@ -69,7 +69,7 @@ enum
 
     GO_LAVATRAP_1               = 177984,
     GO_LAVATRAP_2               = 177985,
-	GO_ONYXIA_DOOR				= 9091,
+    GO_ONYXIA_DOOR                = 9091,
 
     DEPART_FLIGHT               = 20,
     LANDING_FLIGHT              = 21,
@@ -191,7 +191,8 @@ struct TRINITY_DLL_DECL boss_onyxiaAI : public ScriptedAI
 
         // Daemon: remise en mode "dort"
         m_creature->SetStandState(UNIT_STAND_STATE_SLEEP);
-		m_creature->SetUnitMovementFlags(MOVEMENTFLAG_WALK_MODE);
+        m_creature->RemoveUnitMovementFlag(MOVEMENTFLAG_LEVITATING + MOVEMENTFLAG_ONTRANSPORT);
+        m_creature->SetUnitMovementFlags(MOVEMENTFLAG_WALK_MODE);
     }
 
     void DelayEventIfNeed(uint32& event, uint32 delay)
@@ -290,22 +291,22 @@ struct TRINITY_DLL_DECL boss_onyxiaAI : public ScriptedAI
                             pGo->SetGoState(GO_STATE_READY);
 
         std::list<Creature*> WarderList;
-		/*
+        /*
         GetCreatureListWithEntryInGrid(WarderList, m_creature, NPC_ONYXIAN_WARDER, 200.0f);
         for (std::list<Creature*>::iterator itr = WarderList.begin(); itr != WarderList.end(); ++itr)
             if (!(*itr)->isAlive())
                 (*itr)->Respawn();
-				*/
+                */
     }
 
     void EnterEvadeMode() override
     {
         std::list<Creature*> WhelpList;
-		/*
+        /*
         GetCreatureListWithEntryInGrid(WhelpList, m_creature, NPC_ONYXIAN_WHELP, 200.0f);
         for (std::list<Creature*>::iterator itr = WhelpList.begin(); itr != WhelpList.end(); ++itr)            
             (*itr)->ForcedDespawn();
-			*/
+            */
         
         ScriptedAI::EnterEvadeMode();
     }
@@ -587,7 +588,7 @@ struct TRINITY_DLL_DECL boss_onyxiaAI : public ScriptedAI
 
     void PhaseTransition(uint32 uiDiff, bool bDebut)
     {
-//        m_creature->CombatStop(true);
+        //m_creature->CombatStop(true);
         m_creature->clearUnitState(UNIT_STAT_MELEE_ATTACKING);
 
         /** P2 Event to take off */
@@ -694,7 +695,6 @@ struct TRINITY_DLL_DECL boss_onyxiaAI : public ScriptedAI
         if (uiType != POINT_MOTION_TYPE)
             return;
 
-		printf("__________MovementInform__________");
         // restore Onyxia's target after movement in Phase 2
         if (uiPointId == m_pPointData->uiLocId)
         {
@@ -713,6 +713,7 @@ struct TRINITY_DLL_DECL boss_onyxiaAI : public ScriptedAI
                 m_creature->SetOrientation(0.0f);
                 m_uiTransTimer = 1000;
                 m_uiTransCount = 3;
+                m_creature->RemoveUnitMovementFlag(MOVEMENTFLAG_LEVITATING + MOVEMENTFLAG_ONTRANSPORT);
                 m_creature->SetUnitMovementFlags(MOVEMENTFLAG_WALK_MODE);
                 m_creature->CastSpell(m_creature, SPELL_BELLOWINGROAR, true);
                 m_uiBellowingRoarTimer = urand (15000, 30000);
@@ -725,10 +726,10 @@ struct TRINITY_DLL_DECL boss_onyxiaAI : public ScriptedAI
         CheckForTargetsInAggroRadius(uiDiff);
 
         if (!m_creature->isInCombat() || !m_creature->SelectNearestTarget(60))
-		{
-			if (!UpdateVictim())
-				return;
-		}
+        {
+            if (!UpdateVictim())
+                return;
+        }
         
         /** whenever Onyxia is moving to a waypoint or casting Deep Breath, clear her target */
         if (m_bTransition || m_bDeepBreathIsCasting || (m_uiPhase == PHASE_TWO && m_creature->IsMoving()))
@@ -773,15 +774,12 @@ struct TRINITY_DLL_DECL boss_onyxiaAI : public ScriptedAI
         switch (m_uiPhase)
         {
             case PHASE_ONE:
-				printf("one..");
                 PhaseOne(uiDiff);
                 break;
             case PHASE_TWO:
-				printf("two..");
                 PhaseTwo(uiDiff);
                 break;
             case PHASE_THREE:
-				printf("three..");
                 PhaseThree(uiDiff);
                 break;
             default:
