@@ -12759,6 +12759,26 @@ bool Unit::IsInPartyWith(Unit const *unit) const
         return false;
 }
 
+void Unit::NearTeleportTo(float x, float y, float z, float orientation, uint32 teleportOptions)
+{
+
+    if (GetTypeId() == TYPEID_PLAYER)
+        ((Player*)this)->TeleportTo(GetMapId(), x, y, z, orientation, teleportOptions);
+    else
+    {
+        Creature* c = (Creature*)this;
+
+        GetMap()->CreatureRelocation((Creature*)this, x, y, z, orientation);
+        SendMovementFlagUpdate();
+
+        // finished relocation, movegen can different from top before creature relocation,
+        // but apply Reset expected to be safe in any case
+        if (c->GetMotionMaster()->size())
+            if (MovementGenerator *movgen = c->GetMotionMaster()->top())
+                StopMoving();
+    }
+}
+
 bool Unit::IsInRaidWith(Unit const *unit) const
 {
     if(this == unit)

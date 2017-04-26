@@ -32,6 +32,7 @@
 #include "InstanceData.h"
 #include "SpellMgr.h"
 #include "CreatureAIImpl.h"
+#include "CreatureAI.h"
 
 bool CreatureEventAIHolder::UpdateRepeatTimer( Creature* creature, uint32 repeatMin, uint32 repeatMax )
 {

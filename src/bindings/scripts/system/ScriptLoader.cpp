@@ -192,6 +192,7 @@ extern void AddSC_boss_four_horsemen();
 
 //Onyxia's Lair
 extern void AddSC_boss_onyxia();
+extern void AddSC_instance_onyxia_lair();
 
 //Orgrimmar
 extern void AddSC_orgrimmar();
@@ -561,6 +562,7 @@ void AddScripts()
 
     //Onyxia's Lair
     AddSC_boss_onyxia();
+	AddSC_instance_onyxia_lair();
 
     //Orgrimmar
     AddSC_orgrimmar();

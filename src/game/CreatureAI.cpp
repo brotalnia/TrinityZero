@@ -23,6 +23,7 @@
 #include "Creature.h"
 #include "World.h"
 #include "SpellMgr.h"
+#include "CreatureEventAI.h"
 
 //Disable CreatureAI when charmed
 void CreatureAI::OnCharmed(bool apply)
@@ -120,6 +121,104 @@ void CreatureAI::SelectNearestTarget(Unit *who)
         me->getThreatManager().modifyThreatPercent(me->getVictim(), -100);
         me->AddThreat(who, 1000000.0f);
     }
+}
+
+CanCastResult CreatureAI::CanCastSpell(Unit* pTarget, const SpellEntry *pSpell, bool isTriggered)
+{
+    if (!pTarget)
+        return CAST_FAIL_OTHER;
+    // If not triggered, we check
+    if (!isTriggered)
+    {
+        // State does not allow
+        if (m_creature->hasUnitState(UNIT_STAT_CAN_NOT_REACT_OR_LOST_CONTROL))
+            return CAST_FAIL_STATE;
+
+        if (pSpell->PreventionType == SPELL_PREVENTION_TYPE_SILENCE && (m_creature->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SILENCED)))
+            return CAST_FAIL_STATE;
+
+        if (pSpell->PreventionType == SPELL_PREVENTION_TYPE_PACIFY && m_creature->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED))
+            return CAST_FAIL_STATE;
+
+        // Check for power (also done by Spell::CheckCast())
+        if (m_creature->GetPower((Powers)pSpell->powerType) < pSpell->manaCost)
+            return CAST_FAIL_POWER;
+    }
+
+    if (pSpell->rangeIndex == 1)
+        return CAST_OK;
+
+    if (const SpellRangeEntry *pSpellRange = sSpellRangeStore.LookupEntry(pSpell->rangeIndex))
+    {
+        if (pTarget != m_creature)
+        {
+            // pTarget is out of range of this spell (also done by Spell::CheckCast())
+            float fDistance = m_creature->GetDistance(pTarget);
+
+            if (fDistance > pSpellRange->maxRange)
+                return CAST_FAIL_TOO_FAR;
+
+            float fMinRange = pSpellRange->minRange;
+
+            if (fMinRange && fDistance < fMinRange)
+                return CAST_FAIL_TOO_CLOSE;
+        }
+
+        return CAST_OK;
+    }
+    else
+        return CAST_FAIL_OTHER;
+}
+
+CanCastResult CreatureAI::DoCastSpellIfCan(Unit* pTarget, uint32 uiSpell)
+{
+	return DoCastSpellIfCan(pTarget, uiSpell, 0, m_creature->GetGUID());
+}
+
+CanCastResult CreatureAI::DoCastSpellIfCan(Unit* pTarget, uint32 uiSpell, uint32 uiCastFlags, uint64 uiOriginalCasterGUID)
+{
+    if (!pTarget)
+        return CAST_FAIL_OTHER;
+
+    Unit* pCaster = m_creature;
+
+    if (uiCastFlags & CAST_FORCE_TARGET_SELF)
+        pCaster = pTarget;
+
+    // Allowed to cast only if not casting (unless we interrupt ourself) or if spell is triggered
+    if (!pCaster->IsNonMeleeSpellCasted(false) || uiCastFlags & (CAST_TRIGGERED | CAST_INTURRUPT_PREVIOUS))
+    {
+        if (const SpellEntry* pSpell = sSpellStore.LookupEntry(uiSpell))
+        {
+            // If cast flag CAST_AURA_NOT_PRESENT is active, check if target already has aura on them
+            if (uiCastFlags & CAST_AURA_NOT_PRESENT)
+            {
+                if (pTarget->HasAura(uiSpell,0))
+                    return CAST_FAIL_TARGET_AURA;
+            }
+
+            // Check if cannot cast spell
+            if (!(uiCastFlags & (CAST_FORCE_TARGET_SELF | CAST_FORCE_CAST)))
+            {
+                CanCastResult castResult = CanCastSpell(pTarget, pSpell, uiCastFlags & CAST_TRIGGERED);
+
+                if (castResult != CAST_OK)
+                    return castResult;
+            }
+
+            // Interrupt any previous spell
+            if ((uiCastFlags & CAST_INTURRUPT_PREVIOUS) && pCaster->IsNonMeleeSpellCasted(false))
+                pCaster->InterruptNonMeleeSpells(false);
+
+            pCaster->CastSpell(pTarget, pSpell, uiCastFlags & CAST_TRIGGERED, NULL, NULL, uiOriginalCasterGUID);
+            return CAST_OK;
+        }
+
+        sLog.outErrorDb("DoCastSpellIfCan by creature entry %u attempt to cast spell %u but spell does not exist.", m_creature->GetEntry(), uiSpell);
+        return CAST_FAIL_OTHER;
+    }
+
+    return CAST_FAIL_IS_CASTING;
 }
 
 void CreatureAI::EnterEvadeMode()

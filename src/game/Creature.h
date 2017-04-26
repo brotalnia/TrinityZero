@@ -334,6 +334,21 @@ enum AttackingTarget
     */
 };
 
+enum SelectFlags
+{
+    SELECT_FLAG_IN_LOS              = 0x001,                // Default Selection Requirement for Spell-targets
+    SELECT_FLAG_PLAYER              = 0x002,
+    SELECT_FLAG_POWER_MANA          = 0x004,                // For Energy based spells, like manaburn
+    SELECT_FLAG_POWER_RAGE          = 0x008,
+    SELECT_FLAG_POWER_ENERGY        = 0x010,
+    SELECT_FLAG_IN_MELEE_RANGE      = 0x040,
+    SELECT_FLAG_NOT_IN_MELEE_RANGE  = 0x080,
+    SELECT_FLAG_NO_TOTEM            = 0x100,
+    SELECT_FLAG_PLAYER_NOT_GM       = 0x200,
+    SELECT_FLAG_PET                 = 0x400,
+    SELECT_FLAG_NOT_PLAYER          = 0x800,
+};
+
 // GCC have alternative #pragma pack() syntax and old gcc version not support pack(pop), also any gcc version not support it at some platform
 #if defined( __GNUC__ )
 #pragma pack()
@@ -462,6 +477,8 @@ class TRINITY_DLL_SPEC Creature : public Unit
         bool isCanInteractWithBattleMaster(Player* player, bool msg) const;
         bool isCanTrainingAndResetTalentsOf(Player* pPlayer) const;
         bool IsOutOfThreatArea(Unit* pVictim) const;
+
+		Unit* SelectAttackingTarget(AttackingTarget target, uint32 position);
         bool IsImmunedToSpell(SpellEntry const* spellInfo, bool useCharges = false);
                                                             // redefine Unit::IsImmunedToSpell
         bool IsImmunedToSpellEffect(uint32 effect, uint32 mechanic) const;

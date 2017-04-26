@@ -385,6 +385,37 @@ bool Creature::UpdateEntry(uint32 Entry, uint32 team, const CreatureData *data )
     return true;
 }
 
+Unit* Creature::SelectAttackingTarget(AttackingTarget target, uint32 position)
+{
+    //ThreatList m_threatlist;
+    std::list<HostilReference*>& m_threatlist = this->getThreatManager().getThreatList();
+    std::list<HostilReference*>::iterator i = m_threatlist.begin();
+    std::list<HostilReference*>::reverse_iterator r = m_threatlist.rbegin();
+
+    if (position >= m_threatlist.size() || !m_threatlist.size())
+        return NULL;
+
+    switch (target)
+    {
+        case ATTACKING_TARGET_RANDOM:
+        {
+            advance ( i , position +  (rand() % (m_threatlist.size() - position ) ));
+            return Unit::GetUnit(*this,(*i)->getUnitGuid());
+        }
+        case ATTACKING_TARGET_TOPAGGRO:
+        {
+            advance ( i , position);
+            return Unit::GetUnit(*this,(*i)->getUnitGuid());
+        }
+        case ATTACKING_TARGET_BOTTOMAGGRO:
+        {
+            advance ( r , position);
+            return Unit::GetUnit(*this,(*r)->getUnitGuid());
+        }
+    }
+    return NULL;
+}
+
 void Creature::Update(uint32 diff)
 {
     if(m_GlobalCooldown <= diff)
