@@ -151,7 +151,7 @@ struct TRINITY_DLL_DECL boss_onyxiaAI : public ScriptedAI
 
     void Reset()
     {
-        m_uiPhase              = 1;
+        m_uiPhase              = PHASE_ONE;
         m_bTransition          = false;
         m_uiTransTimer         = 0;
         m_uiTransCount         = 0;
@@ -725,10 +725,13 @@ struct TRINITY_DLL_DECL boss_onyxiaAI : public ScriptedAI
     {
         CheckForTargetsInAggroRadius(uiDiff);
 
-        if (!m_creature->isInCombat() || !m_creature->SelectNearestTarget(60))
+        if (!m_creature->isInCombat())
+            return;
+        else if(me->getThreatManager().isThreatListEmpty())
         {
-            if (!UpdateVictim())
-                return;
+            EnterEvadeMode();
+            me->SetReactState(REACT_PASSIVE);
+            return;
         }
         
         /** whenever Onyxia is moving to a waypoint or casting Deep Breath, clear her target */
