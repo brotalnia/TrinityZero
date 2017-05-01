@@ -475,6 +475,95 @@ void Spell::EffectDummy(uint32 i)
         {
             switch(m_spellInfo->Id )
             {
+                case 11885: // Capture Treant
+                case 11886: // Capture Wildkin
+                case 11887: // Capture Hippogryph
+                case 11888: // Capture Faerie Dragon
+                case 11889: // Capture Mountain Giant
+                case 12699: // Summon Screecher Spirit
+                {
+                    if (unitTarget->isDead() && unitTarget->GetTypeId() == TYPEID_UNIT)
+                        ((Creature*)unitTarget)->ForcedDespawn();
+                    return;
+                }
+                case 25716 : // Force Self - Bow
+                {
+                    m_caster->HandleEmoteCommand(EMOTE_ONESHOT_BOW);
+                    return;
+                }
+                case 27798 : //Nature's Bounty
+                {
+                    switch(unitTarget->getPowerType())
+                    {
+                        case POWER_RAGE :
+                            unitTarget->EnergizeBySpell(unitTarget, 27798, 10, POWER_RAGE);
+                        return;
+                        case POWER_ENERGY :
+                            unitTarget->EnergizeBySpell(unitTarget, 27798, 40, POWER_ENERGY);
+                        return;
+                        case POWER_MANA :
+                            unitTarget->EnergizeBySpell(unitTarget, 27798, 300, POWER_MANA);
+                        return;
+                    }
+                    return;
+                }
+                case 24531: // Refocus : "Instantly clears the cooldowns of Aimed Shot, Multishot, Volley, and Arcane Shot."
+                {
+                    if(m_caster->GetTypeId()!=TYPEID_PLAYER)
+                        return;
+
+                    const PlayerSpellMap& sp_list = ((Player *)m_caster)->GetSpellMap();
+                    for (PlayerSpellMap::const_iterator itr = sp_list.begin(); itr != sp_list.end(); ++itr)
+                    {
+                        uint32 classspell = itr->first;
+                        SpellEntry const *spellInfo = sSpellStore.LookupEntry(classspell);
+
+                        // all spells with cooldown
+                        if ((spellInfo->SpellFamilyName == SPELLFAMILY_HUNTER && GetSpellRecoveryTime(spellInfo) > 0))
+                        {
+                            switch (classspell)
+                            {
+                                // Volley
+                                case 1510:
+                                case 14294:
+                                case 14295:
+                                // Multi-Shot
+                                case 2643:
+                                case 14288:
+                                case 14289:
+                                case 14290:
+                                case 25294:
+                                // Arcane Shot
+                                case 3044:
+                                case 14281:
+                                case 14282:
+                                case 14283:
+                                case 14284:
+                                case 14285:
+                                case 14286:
+                                case 14287:
+                                // Aimed Shot
+                                case 19434:
+                                case 20900:
+                                case 20901:
+                                case 20902:
+                                case 20903:
+                                case 20904:
+                                case 27632:
+                                {
+                                    ((Player*)m_caster)->RemoveSpellCooldown(classspell);
+
+                                    WorldPacket data(SMSG_CLEAR_COOLDOWN, (4+8));
+                                    data << uint32(classspell);
+                                    data << uint64(m_caster->GetGUID());
+                                    ((Player*)m_caster)->GetSession()->SendPacket(&data);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    return;
+                }
 				// Blood Fury (racial)
 				case 20572:
                 {
