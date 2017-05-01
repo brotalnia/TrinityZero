@@ -12750,6 +12750,27 @@ void Unit::RestoreFaction()
     }
 }
 
+void Unit::SendSpellGo(Unit* target, uint32 spellId)
+{
+    SpellCastTargets targets;
+    targets.setUnitTarget(target);
+
+    WorldPacket data(SMSG_SPELL_GO, 53);
+    data.append(GetPackGUID());
+
+    data.append(GetPackGUID());
+    data << uint32(spellId);
+    data << uint16(CAST_FLAG_UNKNOWN3);
+
+    //WriteSpellGoTargets(&data);
+    data << uint8(1);
+    data << target->GetGUID();
+    data << uint8(0);
+
+    targets.write(&data);
+    SendMessageToSet(&data, true);
+}
+
 bool Unit::IsInPartyWith(Unit const *unit) const
 {
     if(this == unit)

@@ -564,6 +564,193 @@ void Spell::EffectDummy(uint32 i)
                     }
                     return;
                 }
+                case 8344: // Universal Remote
+                {
+                    if (!m_originalCaster)
+                        return;
+
+                    // Random spell
+                    uint32 randomSpell = urand(0, 2);
+                    switch (randomSpell)
+                    {
+                        case 0:
+                            m_originalCaster->CastSpell(unitTarget, 8345, true);
+                            break;
+                        case 1:
+                            m_originalCaster->CastSpell(unitTarget, 8346, true);
+                            break;
+                        case 2:
+                            unitTarget->CastSpell(unitTarget, 8599, true);
+                            break;
+                        default:
+                            m_originalCaster->CastSpell(unitTarget, 8346, true);
+                            break;
+                    }
+                    return;
+                }
+                case 13006: // Shrink ray
+                {
+                    if (!m_originalCaster)
+                        return;
+                    /* Source: http://www.wowwiki.com/Gnomish_Shrink_Ray
+                        Not implemented yet:
+                        Make every attacking enemy bigger
+                        Make every attacking enemy smaller
+                        Give shield-wielding enemies "Improved Blocking" for 30 seconds (this shows no visible effect other than target is hit by the ray)
+                        13003 - Shrink Ray (single target)
+                        13010 - Shrink (TARGET_ALL_PARTY_AROUND_CASTER)
+                        13004 - Grow  (TARGET_ALL_PARTY_AROUND_CASTER)
+                     */
+                    uint32 r = urand(0, 99);
+                    // Normal behavior
+                    if (r > 15)
+                        m_originalCaster->CastSpell(unitTarget, 13003, true);
+                    else if (r > 13) // Make the user bigger
+                    {
+                        m_originalCaster->AddAura(13004,m_originalCaster);
+                        m_originalCaster->SendSpellGo(m_originalCaster, 13004);
+                    }
+                    else if (r > 11) // Make the user smaller
+                    {
+                        m_originalCaster->AddAura(13010,m_originalCaster);
+                        m_originalCaster->SendSpellGo(m_originalCaster, 13010);
+                    }
+                    else if (r > 9) // Make the target bigger
+                    {
+                        unitTarget->AddAura(13004,unitTarget);
+                        m_originalCaster->SendSpellGo(unitTarget, 13004);
+                    }
+                    else if (r > 4) // Make the user's entire party smaller
+                        m_originalCaster->CastSpell(unitTarget, 13010, true);
+                    else // Make the user's entire party bigger
+                        m_originalCaster->CastSpell(unitTarget, 13004, true);
+                    break;
+                }
+                case 13180: // Gnomish Mind Control Cap
+                {
+                    if (!m_originalCaster)
+                        return;
+
+                    // [WowWiki] Possible malfunctions
+                    // - Fails with no effect, but cooldown is trigged.
+                    // - User becomes mind controlled by target. However, if the Gnomish Mind Control Cap is used while in a shapeshift form (such as cat form), this effect does not trigger.
+                    switch (urand(0, 5))
+                    {
+                        case 0:
+                            break;
+                        case 1:
+                            if (m_originalCaster->m_form == FORM_NONE)
+                                unitTarget->CastSpell(m_originalCaster, 13181, true);
+                            break;
+                        default:
+                            m_originalCaster->CastSpell(unitTarget, 13181, true);
+                            break;
+                    }
+                    return;
+                }
+                case 14537: // Six Demon Bag
+                {
+                    if (!unitTarget)
+                        return;
+
+                    Unit* newTarget = unitTarget;
+                    uint32 spell_id = 0;
+                    uint32 roll = urand(0, 99);
+                    if (roll < 25)                          // Fireball (25% chance)
+                        spell_id = 15662;
+                    else if (roll < 50)                     // Frostbolt (25% chance)
+                        spell_id = 11538;
+                    else if (roll < 70)                     // Chain Lighting (20% chance)
+                        spell_id = 21179;
+                    else if (roll < 77)                     // Polymorph (10% chance, 7% to target)
+                        spell_id = 14621;
+                    else if (roll < 80)                     // Polymorph (10% chance, 3% to self, backfire)
+                    {
+                        spell_id = 14621;
+                        newTarget = m_caster;
+                    }
+                    else if (roll < 95)                     // Enveloping Winds (15% chance)
+                        spell_id = 25189;
+                    else                                    // Summon Felhund minion (5% chance)
+                    {
+                        spell_id = 14642;
+                        newTarget = m_caster;
+                    }
+
+                    m_caster->CastSpell(newTarget, spell_id, true, m_CastItem);
+                    return;
+                }
+                case 17009: // Voodoo
+                {
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    uint32 spell_id = 0;
+                    switch (urand(0, 6))
+                    {
+                        case 0:
+                            spell_id = 16707;
+                            break;    // Hex
+                        case 1:
+                            spell_id = 16708;
+                            break;    // Hex
+                        case 2:
+                            spell_id = 16709;
+                            break;    // Hex
+                        case 3:
+                            spell_id = 16711;
+                            break;    // Grow
+                        case 4:
+                            spell_id = 16712;
+                            break;    // Special Brew
+                        case 5:
+                            spell_id = 16713;
+                            break;    // Ghostly
+                        case 6:
+                            spell_id = 16716;
+                            break;    // Launch
+                    }
+
+                    m_caster->CastSpell(unitTarget, spell_id, true, NULL, NULL, m_originalCasterGUID);
+                    return;
+                }
+                case 25720: //spell Place Loot / Quest 8606 Decoy!
+                {
+                    if (!m_originalCaster)
+                        return;
+                    if (m_originalCaster->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    sLog.outString("Quest 8606 item Dummy Effect.");
+                    Player* pPlayer = (Player*)m_originalCaster;
+                    // Check if player has Narain's outfit
+                    if (!pPlayer->HasAura(25688,0))
+                        return;
+                    // Launch event 9527
+                    sWorld.ScriptsStart(sEventScripts, 9527, pPlayer, focusObject);
+                    // Delete item 21041
+                    pPlayer->DestroyItemCount(21041, -1, true, false);
+                    return;
+                }
+                case 3360:  // Curse of the Eye
+                {
+                    if (!unitTarget)
+                        return;
+
+                    uint32 spell_id = (unitTarget->getGender() == GENDER_MALE) ? 10651 : 10653;
+
+                    m_caster->CastSpell(unitTarget, spell_id, true);
+                    return;
+                }
+                case 7671:  // Transformation (human<->worgen)
+                {
+                    if (!unitTarget)
+                        return;
+
+                    // Transform Visual
+                    unitTarget->CastSpell(unitTarget, 24085, true);
+                    return;
+                }
 				// Blood Fury (racial)
 				case 20572:
                 {
@@ -582,7 +769,7 @@ void Spell::EffectDummy(uint32 i)
 
                     return;
 				}
-                case 8063:                                  // Deviate Fish
+                case 8063:  // Deviate Fish
                 {
                     if(m_caster->GetTypeId() != TYPEID_PLAYER)
                         return;
@@ -599,7 +786,7 @@ void Spell::EffectDummy(uint32 i)
                     m_caster->CastSpell(m_caster,spell_id,true,NULL);
                     return;
                 }
-                case 8213:                                  // Savory Deviate Delight
+                case 8213:  // Savory Deviate Delight
                 {
                     if(m_caster->GetTypeId() != TYPEID_PLAYER)
                         return;
@@ -623,15 +810,26 @@ void Spell::EffectDummy(uint32 i)
                     m_caster->CastSpell(m_caster,spell_id,true,NULL);
                     return;
                 }
-                case 8593:                                  // Symbol of life (restore creature to life)
+                case 8593:  // Symbol of life (restore creature to life)
                 {
                     if(!unitTarget || unitTarget->GetTypeId()!=TYPEID_UNIT)
                         return;
                     ((Creature*)unitTarget)->setDeathState(JUST_ALIVED);
                     return;
                 }
-                case 12162:                                 // Deep wounds
-                case 12850:                                 // (now good common check for this spells)
+                case 9976:  // Polly Eats the E.C.A.C.
+                {
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT)
+                        return;
+
+                    // Summon Polly Jr.
+                    unitTarget->CastSpell(unitTarget, 9998, true);
+
+                    ((Creature*)unitTarget)->ForcedDespawn();
+                    return;
+                }
+                case 12162: // Deep wounds
+                case 12850: // (now good common check for this spells)
                 case 12868:
                 {
                     if(!unitTarget)
@@ -659,13 +857,13 @@ void Spell::EffectDummy(uint32 i)
                     m_caster->CastCustomSpell(unitTarget, 12721, &deepWoundsDotBasePoints0, NULL, NULL, true, NULL);
                     return;
                 }
-                case 12975:                                 //Last Stand
+                case 12975: //Last Stand
                 {
                     int32 healthModSpellBasePoints0 = int32(m_caster->GetMaxHealth()*0.3);
                     m_caster->CastCustomSpell(m_caster, 12976, &healthModSpellBasePoints0, NULL, NULL, true, NULL);
                     return;
                 }
-                case 13120:                                 // net-o-matic
+                case 13120: // net-o-matic
                 {
                     if(!unitTarget)
                         return;
@@ -684,7 +882,20 @@ void Spell::EffectDummy(uint32 i)
                     m_caster->CastSpell(unitTarget,spell_id,true,NULL);
                     return;
                 }
-                case 13567:                                 // Dummy Trigger
+                case 13535: // Tame Beast
+                {
+                    if (!m_originalCaster || m_originalCaster->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    Creature* channelTarget = m_originalCaster->GetMap()->GetCreatureInMap(m_originalCaster->GetChannelObjectGuid());
+
+                    if (!channelTarget)
+                        return;
+
+                    m_originalCaster->CastSpell(channelTarget, 13481, true, NULL, NULL, m_originalCasterGUID);
+                    return;
+                }
+                case 13567: // Dummy Trigger
                 {
                     // can be used for different aura triggering, so select by aura
                     if(!m_triggeredByAuraSpell || !unitTarget)
@@ -701,7 +912,7 @@ void Spell::EffectDummy(uint32 i)
                     }
                     return;
                 }
-                case 14185:                                 // Preparation Rogue
+                case 14185: // Preparation Rogue
                 {
                     if(m_caster->GetTypeId()!=TYPEID_PLAYER)
                         return;
@@ -727,7 +938,7 @@ void Spell::EffectDummy(uint32 i)
                     }
                     return;
                 }
-                case 15998:                                 // Capture Worg Pup
+                case 15998: // Capture Worg Pup
                 {
                     if(!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT)
                         return;
@@ -737,7 +948,7 @@ void Spell::EffectDummy(uint32 i)
                     creatureTarget->ForcedDespawn();
                     return;
                 }
-                case 16589:                                 // Noggenfogger Elixir
+                case 16589: // Noggenfogger Elixir
                 {
                     if(m_caster->GetTypeId()!=TYPEID_PLAYER)
                         return;
@@ -753,7 +964,7 @@ void Spell::EffectDummy(uint32 i)
                     m_caster->CastSpell(m_caster,spell_id,true,NULL);
                     return;
                 }
-                case 17251:                                 // Spirit Healer Res
+                case 17251: // Spirit Healer Res
                 {
                     if(!unitTarget || !m_originalCaster)
                         return;
@@ -766,7 +977,7 @@ void Spell::EffectDummy(uint32 i)
                     }
                     return;
                 }
-                case 17271:                                 // Test Fetid Skull
+                case 17271: // Test Fetid Skull
                 {
                     if(!itemTarget && m_caster->GetTypeId()!=TYPEID_PLAYER)
                         return;
@@ -776,11 +987,47 @@ void Spell::EffectDummy(uint32 i)
                     m_caster->CastSpell(m_caster,spell_id,true,NULL);
                     return;
                 }
-                case 20577:                                 // Cannibalize
+                case 17770: // Wolfshead Helm Energy
+                {
+                    m_caster->CastSpell(m_caster, 29940, true, NULL);
+                    return;
+                }
+                case 17950: // Shadow Portal
+                {
+                    if (!unitTarget)
+                        return;
+
+                    const uint32 spell_list[6] = {17863, 17939, 17943, 17944, 17946, 17948};
+
+                    m_caster->CastSpell(unitTarget, spell_list[urand(0, 5)], true);
+                    return;
+                }
+                case 18350: // Dummy Trigger
+                {
+                    if (unitTarget->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    // Need remove self if Lightning Shield not active
+                    if (unitTarget->HasAura(324,0) || unitTarget->HasAura(325,0) || unitTarget->HasAura(905,0) || unitTarget->HasAura(945,0) || unitTarget->HasAura(8134,0) || unitTarget->HasAura(10431,0) || unitTarget->HasAura(10432,0))
+                        return;
+
+                    unitTarget->RemoveAurasDueToSpell(28820);
+                    return;
+                }
+                case 19411: // Lava Bomb
+                case 20474: // Lava Bomb
+                {
+                    if (!unitTarget)
+                        return;
+
+                    unitTarget->CastSpell(unitTarget, 20494, true);
+                    return;
+                }
+                case 20577: // Cannibalize
                     if (unitTarget)
                         m_caster->CastSpell(m_caster,20578,false,NULL);
                     return;
-                case 23019:                                 // Crystal Prison Dummy DND
+                case 23019: // Crystal Prison Dummy DND
                 {
                     if(!unitTarget || !unitTarget->isAlive() || unitTarget->GetTypeId() != TYPEID_UNIT || ((Creature*)unitTarget)->isPet())
                         return;
@@ -809,23 +1056,23 @@ void Spell::EffectDummy(uint32 i)
 
                     return;
                 }
-                case 23074:                                 // Arc. Dragonling
+                case 23074: // Arc. Dragonling
                     if (!m_CastItem) return;
                     m_caster->CastSpell(m_caster,19804,true,m_CastItem);
                     return;
-                case 23075:                                 // Mithril Mechanical Dragonling
+                case 23075: // Mithril Mechanical Dragonling
                     if (!m_CastItem) return;
                     m_caster->CastSpell(m_caster,12749,true,m_CastItem);
                     return;
-                case 23076:                                 // Mechanical Dragonling
+                case 23076: // Mechanical Dragonling
                     if (!m_CastItem) return;
                     m_caster->CastSpell(m_caster,4073,true,m_CastItem);
                     return;
-                case 23133:                                 // Gnomish Battle Chicken
+                case 23133: // Gnomish Battle Chicken
                     if (!m_CastItem) return;
                     m_caster->CastSpell(m_caster,13166,true,m_CastItem);
                     return;
-                case 23448:                                 // Ultrasafe Transporter: Gadgetzan - backfires
+                case 23448: // Ultrasafe Transporter: Gadgetzan - backfires
                 {
                     int32 r = irand(0, 119);
                     if ( r < 20 )                           // 1/6 polymorph
@@ -836,7 +1083,7 @@ void Spell::EffectDummy(uint32 i)
                         m_caster->CastSpell(m_caster,36902,true);
                     return;
                 }
-                case 23453:                                 // Ultrasafe Transporter: Gadgetzan
+                case 23453: // Ultrasafe Transporter: Gadgetzan
                     if ( roll_chance_i(50) )                // success
                         m_caster->CastSpell(m_caster,23441,true);
                     else                                    // failure
@@ -850,14 +1097,17 @@ void Spell::EffectDummy(uint32 i)
                         }
                     }
                     return;
-                case 23645:                                 // Hourglass Sand
+                case 23645: // Hourglass Sand
                     m_caster->RemoveAurasDueToSpell(23170);
                     return;
-                case 23725:                                 // Gift of Life (warrior bwl trinket)
-                    m_caster->CastSpell(m_caster,23782,true);
-                    m_caster->CastSpell(m_caster,23783,true);
+                case 23725: // Gift of Life (warrior bwl trinket)
+                {
+                    int32 GiftOfLifeSpellBasePoints0 = int32(m_caster->GetMaxHealth()*0.15);
+                    m_caster->CastCustomSpell(m_caster, 23782, &GiftOfLifeSpellBasePoints0, NULL, NULL, true, NULL);
+                    m_caster->CastCustomSpell(m_caster, 23783, &GiftOfLifeSpellBasePoints0, NULL, NULL, true, NULL);
                     return;
-                case 25860:                                 // Reindeer Transformation
+                }
+                case 25860: // Reindeer Transformation
                 {
                     if (!m_caster->HasAuraType(SPELL_AURA_MOUNTED))
                         return;
@@ -874,9 +1124,7 @@ void Spell::EffectDummy(uint32 i)
 
                     return;
                 }
-                //case 26074:                               // Holiday Cheer
-                //    return; -- implemented at client side
-                case 28006:                                 // Arcane Cloaking
+                case 28006: // Arcane Cloaking
                 {
                     if(unitTarget && unitTarget->GetTypeId() == TYPEID_PLAYER )
                         m_caster->CastSpell(unitTarget,29294,true);

@@ -1092,6 +1092,8 @@ class TRINITY_DLL_SPEC Unit : public WorldObject
         void CastSpell(float x, float y, float z, uint32 spellId, bool triggered, Item *castItem = NULL, Aura* triggeredByAura = NULL, uint64 originalCaster = 0);
         void CastSpell(GameObject *go, uint32 spellId, bool triggered, Item *castItem = NULL, Aura* triggeredByAura = NULL, uint64 originalCaster = 0);
         void AddAura(uint32 spellId, Unit *target);
+        // Displays the visual of a spell
+        void SendSpellGo(Unit* target, uint32 spellId);
 
         bool IsDamageToThreatSpell(SpellEntry const * spellInfo) const;
 
@@ -1131,6 +1133,9 @@ class TRINITY_DLL_SPEC Unit : public WorldObject
         uint64 GetCharmGUID() const { return  GetUInt64Value(UNIT_FIELD_CHARM); }
         uint64 const& GetTargetGuid() const { return GetUInt64Value(UNIT_FIELD_TARGET); }
         void SetTargetGuid(uint64 targetGuid) { SetUInt64Value(UNIT_FIELD_TARGET, targetGuid); }
+
+        uint64 const& GetChannelObjectGuid() const { return GetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT); }
+        void SetChannelObjectGuid(uint64 targetGuid) { SetUInt64Value(UNIT_FIELD_CHANNEL_OBJECT, targetGuid); }
 
         uint64 GetCharmerOrOwnerGUID() const { return GetCharmerGUID() ? GetCharmerGUID() : GetOwnerGUID(); }
         uint64 GetCharmerOrOwnerOrOwnGUID() const
