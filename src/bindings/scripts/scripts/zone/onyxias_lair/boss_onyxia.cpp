@@ -295,7 +295,7 @@ struct TRINITY_DLL_DECL boss_onyxiaAI : public ScriptedAI
         Creature* warder;
         
         // Respawning warders.
-        while (warder = m_creature->FindNearestCreature(NPC_ONYXIAN_WHELP,false,200))
+        while (warder = m_creature->FindNearestCreature(NPC_ONYXIAN_WARDER,false,200))
         {
             warder->Respawn();
         }
