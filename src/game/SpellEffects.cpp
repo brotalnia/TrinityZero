@@ -475,28 +475,6 @@ void Spell::EffectDummy(uint32 i)
         {
             switch(m_spellInfo->Id )
             {
-                // Wrath of the Astromancer
-                case 42784:
-                {
-                    uint32 count = 0;
-                    for(std::list<TargetInfo>::iterator ihit= m_UniqueTargetInfo.begin();ihit != m_UniqueTargetInfo.end();++ihit)
-                        if(ihit->effectMask & (1<<i))
-                            ++count;
-
-                    damage = 12000; // maybe wrong value
-                    damage /= count;
-
-                    SpellEntry const *spellInfo = sSpellStore.LookupEntry(42784);
-
-                     // now deal the damage
-                    for(std::list<TargetInfo>::iterator ihit= m_UniqueTargetInfo.begin();ihit != m_UniqueTargetInfo.end();++ihit)
-                        if(ihit->effectMask & (1<<i))
-                            {
-                                Unit* casttarget = Unit::GetUnit((*unitTarget), ihit->targetGUID);
-                                if(casttarget)
-                                    m_caster->DealDamage(casttarget, damage, NULL, SPELL_DIRECT_DAMAGE, SPELL_SCHOOL_MASK_ARCANE, spellInfo, false);
-                            }
-                }
 				// Blood Fury (racial)
 				case 20572:
                 {
@@ -515,54 +493,6 @@ void Spell::EffectDummy(uint32 i)
 
                     return;
 				}
-                // Encapsulate Voidwalker
-                case 29364:
-                {
-                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT || ((Creature*)unitTarget)->isPet()) return;
-
-                    Creature* creatureTarget = (Creature*)unitTarget;
-                    GameObject* pGameObj = new GameObject;
-
-                    if (!creatureTarget || !pGameObj) return;
-
-                    if (!pGameObj->Create(objmgr.GenerateLowGuid(HIGHGUID_GAMEOBJECT), 181574, creatureTarget->GetMap(),
-                        creatureTarget->GetPositionX(), creatureTarget->GetPositionY(), creatureTarget->GetPositionZ(),
-                        creatureTarget->GetOrientation(), 0, 0, 0, 0, 100, 1))
-                    {
-                        delete pGameObj;
-                        return;
-                    }
-
-                    pGameObj->SetRespawnTime(0);
-                    pGameObj->SetOwnerGUID(m_caster->GetGUID());
-                    //pGameObj->SetUInt32Value(GAMEOBJECT_LEVEL, m_caster->getLevel());
-                    pGameObj->SetSpellId(m_spellInfo->Id);
-
-                    MapManager::Instance().GetMap(creatureTarget->GetMapId(), pGameObj)->Add(pGameObj);
-
-                    WorldPacket data(SMSG_GAMEOBJECT_SPAWN_ANIM_OBSOLETE, 8);
-                    data << uint64(pGameObj->GetGUID());
-                    m_caster->SendMessageToSet(&data,true);
-
-                    return;
-                }
-                // Demon Broiled Surprise
-                case 43723:
-                {
-                    if (!unitTarget || unitTarget->isAlive() || unitTarget->GetTypeId() != TYPEID_UNIT ||
-                        ((Creature*)unitTarget)->isPet()) return;
-
-                    Player *player = (Player*)m_caster;
-
-                    if (!player) return;
-
-                    player->CastSpell(unitTarget, 43753, true);
-
-                    if (player->GetQuestStatus(11379) == QUEST_STATUS_INCOMPLETE && unitTarget->GetEntry() == 19973)
-                        player->CastedCreatureOrGO(19973, unitTarget->GetGUID(), 43723);
-
-                    return;
-                }
                 case 8063:                                  // Deviate Fish
                 {
                     if(m_caster->GetTypeId() != TYPEID_PLAYER)
@@ -586,18 +516,25 @@ void Spell::EffectDummy(uint32 i)
                         return;
 
                     uint32 spell_id = 0;
-                    switch(urand(1,2))
+                    switch(urand(1,6))
                     {
                         // Flip Out - ninja
                         case 1: spell_id = (m_caster->getGender() == GENDER_MALE ? 8219 : 8220); break;
                         // Yaaarrrr - pirate
                         case 2: spell_id = (m_caster->getGender() == GENDER_MALE ? 8221 : 8222); break;
+                        // Oops - goo
+                        case 3: spell_id = 8223; break;
+                        // Rapid Cast
+                        case 4: spell_id = 8215; break;
+                        // Cowardice
+                        case 5: spell_id = 8224; break;
+                        // Fake Death
+                        case 6: spell_id = 8226; break;
                     }
                     m_caster->CastSpell(m_caster,spell_id,true,NULL);
                     return;
                 }
                 case 8593:                                  // Symbol of life (restore creature to life)
-                case 31225:                                 // Shimmering Vessel (restore creature to life)
                 {
                     if(!unitTarget || unitTarget->GetTypeId()!=TYPEID_UNIT)
                         return;
@@ -648,9 +585,9 @@ void Spell::EffectDummy(uint32 i)
 
                     uint32 roll = urand(0, 99);
 
-                    if(roll < 2)                            // 2% for 30 sec self root (off-like chance unknown)
+                    if(roll < 10)                            // 10% for 30 sec self root (off-like chance unknown)
                         spell_id = 16566;
-                    else if(roll < 4)                       // 2% for 20 sec root, charge to target (off-like chance unknown)
+                    else if(roll < 20)                       // 10% for 20 sec root, charge to target (off-like chance unknown)
                         spell_id = 13119;
                     else                                    // normal root
                         spell_id = 13099;
@@ -702,15 +639,13 @@ void Spell::EffectDummy(uint32 i)
                     return;
                 }
                 case 15998:                                 // Capture Worg Pup
-                case 29435:                                 // Capture Female Kaliri Hatchling
                 {
                     if(!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT)
                         return;
 
                     Creature* creatureTarget = (Creature*)unitTarget;
-                    creatureTarget->setDeathState(JUST_DIED);
-                    creatureTarget->RemoveCorpse();
-                    creatureTarget->SetHealth(0);           // just for nice GM-mode view
+
+                    creatureTarget->ForcedDespawn();
                     return;
                 }
                 case 16589:                                 // Noggenfogger Elixir
@@ -765,12 +700,20 @@ void Spell::EffectDummy(uint32 i)
                     if(creatureTarget->isPet())
                         return;
 
-                    creatureTarget->setDeathState(JUST_DIED);
-                    creatureTarget->RemoveCorpse();
-                    creatureTarget->SetHealth(0);                   // just for nice GM-mode view
 
                     GameObject* Crystal_Prison = m_caster->SummonGameObject(179644, creatureTarget->GetPositionX(), creatureTarget->GetPositionY(), creatureTarget->GetPositionZ(), creatureTarget->GetOrientation(), 0, 0, 0, 0, creatureTarget->GetRespawnTime()-time(NULL));
+                    if (!Crystal_Prison)
+                    {
+                        delete Crystal_Prison;
+                        return;
+                    }
+
+                    Crystal_Prison->SetSpellId(m_spellInfo->Id);
+
+                    creatureTarget->ForcedDespawn();
+
                     sLog.outDebug("SummonGameObject at SpellEfects.cpp EffectDummy for Spell 23019\n");
+
                     WorldPacket data(SMSG_GAMEOBJECT_SPAWN_ANIM_OBSOLETE, 8);
                     data << uint64(Crystal_Prison->GetGUID());
                     m_caster->SendMessageToSet(&data,true);
@@ -808,7 +751,15 @@ void Spell::EffectDummy(uint32 i)
                     if ( roll_chance_i(50) )                // success
                         m_caster->CastSpell(m_caster,23441,true);
                     else                                    // failure
-                        m_caster->CastSpell(m_caster,23446,true);
+                    {
+                        if (roll_chance_i(50))
+                            m_caster->CastSpell(m_caster, 23446, true);
+                        else
+                        {
+                            if (m_caster->GetTypeId() == TYPEID_PLAYER)
+                                ((Player*)m_caster)->TeleportTo(1, -7341.38f, -3908.11f, 150.7f, 0.51f);
+                        }
+                    }
                     return;
                 case 23645:                                 // Hourglass Sand
                     m_caster->RemoveAurasDueToSpell(23170);
@@ -838,256 +789,10 @@ void Spell::EffectDummy(uint32 i)
                 //    return; -- implemented at client side
                 case 28006:                                 // Arcane Cloaking
                 {
-                    if( unitTarget->GetTypeId() == TYPEID_PLAYER )
+                    if(unitTarget && unitTarget->GetTypeId() == TYPEID_PLAYER )
                         m_caster->CastSpell(unitTarget,29294,true);
                     return;
-                }
-                case 28730:                                 // Arcane Torrent (Mana)
-                {
-                    Aura * dummy = m_caster->GetDummyAura(28734);
-                    if (dummy)
-                    {
-                        int32 bp = damage * dummy->GetStackAmount();
-                        m_caster->CastCustomSpell(m_caster, 28733, &bp, NULL, NULL, true);
-                        m_caster->RemoveAurasDueToSpell(28734);
-                    }
-                    return;
-                }
-                case 29200:                                 // Purify Helboar Meat
-                {
-                    if( m_caster->GetTypeId() != TYPEID_PLAYER )
-                        return;
-
-                    uint32 spell_id = roll_chance_i(50) ? 29277 : 29278;
-
-                    m_caster->CastSpell(m_caster,spell_id,true,NULL);
-                    return;
-                }
-                case 29858:                                 // Soulshatter
-                    if (unitTarget && unitTarget->CanHaveThreatList()
-                        && unitTarget->getThreatManager().getThreat(m_caster) > 0.0f)
-                        m_caster->CastSpell(unitTarget,32835,true);
-                    return;
-                case 30458:                                 // Nigh Invulnerability
-                    if (!m_CastItem) return;
-                    if(roll_chance_i(86))                   // success
-                        m_caster->CastSpell(m_caster, 30456, true, m_CastItem);
-                    else                                    // backfire in 14% casts
-                        m_caster->CastSpell(m_caster, 30457, true, m_CastItem);
-                    return;
-                case 30507:                                 // Poultryizer
-                    if (!m_CastItem) return;
-                    if(roll_chance_i(80))                   // success
-                        m_caster->CastSpell(unitTarget, 30501, true, m_CastItem);
-                    else                                    // backfire 20%
-                        m_caster->CastSpell(unitTarget, 30504, true, m_CastItem);
-                    return;
-                case 33060:                                         // Make a Wish
-                {
-                    if(m_caster->GetTypeId()!=TYPEID_PLAYER)
-                        return;
-
-                    uint32 spell_id = 0;
-
-                    switch(urand(1,5))
-                    {
-                        case 1: spell_id = 33053; break;
-                        case 2: spell_id = 33057; break;
-                        case 3: spell_id = 33059; break;
-                        case 4: spell_id = 33062; break;
-                        case 5: spell_id = 33064; break;
-                    }
-
-                    m_caster->CastSpell(m_caster,spell_id,true,NULL);
-                    return;
-                }
-                case 35745:
-                {
-                    uint32 spell_id;
-                    switch(m_caster->GetAreaId())
-                    {
-                        case 3900: spell_id = 35743; break;
-                        case 3742: spell_id = 35744; break;
-                        default: return;
-                    }
-
-                    m_caster->CastSpell(m_caster,spell_id,true);
-                    return;
-                }
-                case 37674:                                 // Chaos Blast
-                {
-                    if(!unitTarget)
-                        return;
-
-                    int32 basepoints0 = 100;
-                    m_caster->CastCustomSpell(unitTarget,37675,&basepoints0,NULL,NULL,true);
-                    return;
-                }
-                case 40802:                                 // Mingo's Fortune Generator (Mingo's Fortune Giblets)
-                {
-                    // selecting one from Bloodstained Fortune item
-                    uint32 newitemid;
-                    switch(urand(1,20))
-                    {
-                        case 1:  newitemid = 32688; break;
-                        case 2:  newitemid = 32689; break;
-                        case 3:  newitemid = 32690; break;
-                        case 4:  newitemid = 32691; break;
-                        case 5:  newitemid = 32692; break;
-                        case 6:  newitemid = 32693; break;
-                        case 7:  newitemid = 32700; break;
-                        case 8:  newitemid = 32701; break;
-                        case 9:  newitemid = 32702; break;
-                        case 10: newitemid = 32703; break;
-                        case 11: newitemid = 32704; break;
-                        case 12: newitemid = 32705; break;
-                        case 13: newitemid = 32706; break;
-                        case 14: newitemid = 32707; break;
-                        case 15: newitemid = 32708; break;
-                        case 16: newitemid = 32709; break;
-                        case 17: newitemid = 32710; break;
-                        case 18: newitemid = 32711; break;
-                        case 19: newitemid = 32712; break;
-                        case 20: newitemid = 32713; break;
-                        default:
-                            return;
-                    }
-
-                    DoCreateItem(i,newitemid);
-                    return;
-                }
-                // Demon Broiled Surprise
-                /* FIX ME: Required for correct work implementing implicit target 7 (in pair (22,7))
-                case 43723:
-                {
-                    if (m_caster->GetTypeId() != TYPEID_PLAYER)
-                        return;
-
-                    ((Player*)m_caster)->CastSpell(unitTarget, 43753, true);
-                    return;
-                }
-                */
-                case 44875:                                 // Complete Raptor Capture
-                {
-                    if(!unitTarget || unitTarget->GetTypeId() != TYPEID_UNIT)
-                        return;
-
-                    Creature* creatureTarget = (Creature*)unitTarget;
-
-                    creatureTarget->setDeathState(JUST_DIED);
-                    creatureTarget->RemoveCorpse();
-                    creatureTarget->SetHealth(0);           // just for nice GM-mode view
-
-                    //cast spell Raptor Capture Credit
-                    m_caster->CastSpell(m_caster,42337,true,NULL);
-                    return;
-                }
-                case 37573:                                 //Temporal Phase Modulator
-                {
-                    if(!unitTarget)
-                        return;
-
-                    TemporarySummon* tempSummon = dynamic_cast<TemporarySummon*>(unitTarget);
-                    if(!tempSummon)
-                        return;
-
-                    uint32 health = tempSummon->GetHealth();
-                    const uint32 entry_list[6] = {21821, 21820, 21817};
-
-                    float x = tempSummon->GetPositionX();
-                    float y = tempSummon->GetPositionY();
-                    float z = tempSummon->GetPositionZ();
-                    float o = tempSummon->GetOrientation();
-
-                    tempSummon->UnSummon();
-
-                    Creature* pCreature = m_caster->SummonCreature(entry_list[urand(0, 2)], x, y, z, o,TEMPSUMMON_TIMED_OR_DEAD_DESPAWN,180000);
-                    if (!pCreature)
-                        return;
-
-                    pCreature->SetHealth(health);
-
-                    if(pCreature->IsAIEnabled)
-                        pCreature->AI()->AttackStart(m_caster);
-
-                    return;
-                }
-                case 34665:                                 //Administer Antidote
-                {
-                    if(!unitTarget || m_caster->GetTypeId() != TYPEID_PLAYER )
-                        return;
-
-                    if(!unitTarget)
-                        return;
-
-                    TemporarySummon* tempSummon = dynamic_cast<TemporarySummon*>(unitTarget);
-                    if(!tempSummon)
-                        return;
-
-                    uint32 health = tempSummon->GetHealth();
-
-                    float x = tempSummon->GetPositionX();
-                    float y = tempSummon->GetPositionY();
-                    float z = tempSummon->GetPositionZ();
-                    float o = tempSummon->GetOrientation();
-                    tempSummon->UnSummon();
-
-                    Creature* pCreature = m_caster->SummonCreature(16992, x, y, z, o,TEMPSUMMON_TIMED_OR_DEAD_DESPAWN,180000);
-                    if (!pCreature)
-                        return;
-
-                    pCreature->SetHealth(health);
-                    ((Player*)m_caster)->KilledMonster(16992,pCreature->GetGUID());
-
-                    if (pCreature->IsAIEnabled)
-                        pCreature->AI()->AttackStart(m_caster);
-
-                    return;
-                }
-                case 44997:                                 // Converting Sentry
-                {
-                    //Converted Sentry Credit
-                    m_caster->CastSpell(m_caster, 45009, true);
-                    return;
-                }
-                case 45030:                                 // Impale Emissary
-                {
-                    // Emissary of Hate Credit
-                    m_caster->CastSpell(m_caster, 45088, true);
-                    return;
-                }
-                case 50243:                                 // Teach Language
-                {
-                    if(m_caster->GetTypeId() != TYPEID_PLAYER)
-                        return;
-
-                    // spell has a 1/3 chance to trigger one of the below
-                    if(roll_chance_i(66))
-                        return;
-                    if(((Player*)m_caster)->GetTeam() == ALLIANCE)
-                    {
-                        // 1000001 - gnomish binary
-                        m_caster->CastSpell(m_caster, 50242, true);
-                    }
-                    else
-                    {
-                        // 01001000 - goblin binary
-                        m_caster->CastSpell(m_caster, 50246, true);
-                    }
-
-                    return;
-                }
-                case 51582:                                 //Rocket Boots Engaged (Rocket Boots Xtreme and Rocket Boots Xtreme Lite)
-                {
-                    if(m_caster->GetTypeId() != TYPEID_PLAYER)
-                        return;
-
-                    if(BattleGround* bg = ((Player*)m_caster)->GetBattleGround())
-                        bg->EventPlayerDroppedFlag((Player*)m_caster);
-
-                    m_caster->CastSpell(m_caster, 30452, true, NULL);
-                    return;
-                }                
+                }  
             }
 
             //All IconID Check in there
