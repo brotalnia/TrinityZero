@@ -1972,6 +1972,30 @@ Unit* Creature::SelectNearestTarget(float dist) const
     return target;
 }
 
+Creature* Creature::FindNearestCreature(uint32 entry, bool alive, float range) const
+{
+    CellPair p(Trinity::ComputeCellPair(GetPositionX(), GetPositionY()));
+    Cell cell(p);
+    cell.data.Part.reserved = ALL_DISTRICT;
+    cell.SetNoCreate();
+
+    Creature *p_Creature = NULL;
+
+    {
+        Trinity::NearestCreatureEntryWithLiveStateInObjectRangeCheck u_check(*this, entry, alive, range);
+        Trinity::CreatureLastSearcher<Trinity::NearestCreatureEntryWithLiveStateInObjectRangeCheck> searcher(p_Creature, u_check);
+
+        TypeContainerVisitor<Trinity::CreatureLastSearcher<Trinity::NearestCreatureEntryWithLiveStateInObjectRangeCheck>, WorldTypeMapContainer > world_creature_searcher(searcher);
+        TypeContainerVisitor<Trinity::CreatureLastSearcher<Trinity::NearestCreatureEntryWithLiveStateInObjectRangeCheck>, GridTypeMapContainer >  grid_creature_searcher(searcher);
+
+        CellLock<GridReadGuard> cell_lock(cell, p);
+        cell_lock->Visit(cell_lock, world_creature_searcher, *GetMap());
+        cell_lock->Visit(cell_lock, grid_creature_searcher, *GetMap());
+    }
+
+    return p_Creature;
+}
+
 void Creature::CallAssistance()
 {
     if( !m_AlreadyCallAssistance && getVictim() && !isPet() && !isCharmed())

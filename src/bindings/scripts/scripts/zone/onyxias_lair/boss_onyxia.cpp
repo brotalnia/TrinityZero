@@ -1,4 +1,5 @@
-/* Copyright (C) 2006 - 2008 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
+/* Copyright (C) 2006 - 2009 ScriptDev2 <https://scriptdev2.svn.sourceforge.net/>
+/* Copyright (C) 2015 - 2016 Nostalrius <https://en.nostalrius.org/>
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -16,10 +17,11 @@
 
 /* ScriptData
 SDName: Boss_Onyxia
-SD%Complete: 90
-SDComment: Spell Heated Ground is wrong, flying animation, visual for area effect
+SD%Complete: 95
+SDComment: Flying animation is missing, Onyxia walks in the air instead.
 SDCategory: Onyxia's Lair
-EndScriptData */
+EndScriptData
+*/
 
 #include "precompiled.h"
 #include "instance_onyxia_lair.h"
@@ -290,24 +292,26 @@ struct TRINITY_DLL_DECL boss_onyxiaAI : public ScriptedAI
         if (GameObject *pGo = m_creature->GetMap()->GetGameObjectInMap(GO_ONYXIA_DOOR))
                             pGo->SetGoState(GO_STATE_READY);
 
-        std::list<Creature*> WarderList;
-        /*
-        GetCreatureListWithEntryInGrid(WarderList, m_creature, NPC_ONYXIAN_WARDER, 200.0f);
-        for (std::list<Creature*>::iterator itr = WarderList.begin(); itr != WarderList.end(); ++itr)
-            if (!(*itr)->isAlive())
-                (*itr)->Respawn();
-                */
+        Creature* warder;
+        
+        // Respawning warders.
+        while (warder = m_creature->FindNearestCreature(NPC_ONYXIAN_WHELP,false,200))
+        {
+            warder->Respawn();
+        }
+
     }
 
     void EnterEvadeMode() override
     {
-        std::list<Creature*> WhelpList;
-        /*
-        GetCreatureListWithEntryInGrid(WhelpList, m_creature, NPC_ONYXIAN_WHELP, 200.0f);
-        for (std::list<Creature*>::iterator itr = WhelpList.begin(); itr != WhelpList.end(); ++itr)            
-            (*itr)->ForcedDespawn();
-            */
+        Creature* whelp;
         
+        // Despawning adds.
+        while (whelp = m_creature->FindNearestCreature(NPC_ONYXIAN_WHELP,true,200))
+        {
+            whelp->ForcedDespawn();
+        }
+
         ScriptedAI::EnterEvadeMode();
     }
     
@@ -714,6 +718,7 @@ struct TRINITY_DLL_DECL boss_onyxiaAI : public ScriptedAI
                 m_uiTransTimer = 1000;
                 m_uiTransCount = 3;
                 m_creature->RemoveUnitMovementFlag(MOVEMENTFLAG_LEVITATING + MOVEMENTFLAG_ONTRANSPORT);
+                m_creature->SetHover(false);
                 m_creature->SetUnitMovementFlags(MOVEMENTFLAG_WALK_MODE);
                 m_creature->CastSpell(m_creature, SPELL_BELLOWINGROAR, true);
                 m_uiBellowingRoarTimer = urand (15000, 30000);

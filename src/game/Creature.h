@@ -608,6 +608,7 @@ class TRINITY_DLL_SPEC Creature : public Unit
         float GetAttackDistance(Unit const* pl) const;
 
         Unit* SelectNearestTarget(float dist = 0) const;
+        Creature* FindNearestCreature(uint32 entry, bool alive, float range) const;
         void CallAssistance();
         void CallForHelp(float fRadius);
         void SetNoCallAssistance(bool val) { m_AlreadyCallAssistance = val; }
