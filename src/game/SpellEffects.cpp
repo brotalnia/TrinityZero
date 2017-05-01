@@ -268,7 +268,6 @@ void Spell::EffectInstaKill(uint32 /*i*/)
             case   417: spellID=18792; break;               //fellhunter
             case  1860: spellID=18790; break;               //void
             case  1863: spellID=18791; break;               //succubus
-            case 17252: spellID=35701; break;               //fellguard
             default:
                 sLog.outError("EffectInstaKill: Unhandled creature entry (%u) case.",entry);
                 return;
@@ -279,6 +278,11 @@ void Spell::EffectInstaKill(uint32 /*i*/)
 
     if(m_caster==unitTarget)                                // prevent interrupt message
         finish();
+
+    WorldPacket data(SMSG_SPELLINSTAKILLLOG, (8 + 4));
+    data << unitTarget->GetGUID();                    // Victim GUID
+    data << uint32(m_spellInfo->Id);
+    m_caster->SendMessageToSet(&data, true);
 
     uint32 health = unitTarget->GetHealth();
     m_caster->DealDamage(unitTarget, health, NULL, DIRECT_DAMAGE, SPELL_SCHOOL_MASK_NORMAL, NULL, false);
