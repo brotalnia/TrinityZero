@@ -344,6 +344,13 @@ void Spell::SpellDamageSchoolDmg(uint32 effect_idx)
                             { damage /= 2; }
                         break;
                     }
+                    // Chain Lightning (Simone the Seductress)
+                    case 23206:
+                    {
+                        if (unitTarget->HasAura(20190))     // reduce damage by 75% if target has Aspect of the Wild (Rank 2)
+                            damage *= 0.25;
+                         break;
+                    }
 					// T2 Set Bonus Judgement spell that shouldn't benefit from Spell Damage
 					case 23590:
 					{
@@ -356,7 +363,6 @@ void Spell::SpellDamageSchoolDmg(uint32 effect_idx)
                 }
                 break;
             }
-
             case SPELLFAMILY_MAGE:
                 break;
             case SPELLFAMILY_WARRIOR:
@@ -436,7 +442,7 @@ void Spell::SpellDamageSchoolDmg(uint32 effect_idx)
                 {
                     damage += int32(m_caster->GetTotalAttackPowerValue(RANGED_ATTACK)*0.15);
                 }
-                //Explosive Trap Effect
+                // Explosive Trap Effect
                 else if(m_spellInfo->SpellFamilyFlags & 0x00000004)
                 {
                     damage += int32(m_caster->GetTotalAttackPowerValue(RANGED_ATTACK)*0.1);
