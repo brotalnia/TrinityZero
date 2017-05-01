@@ -347,7 +347,7 @@ void Spell::SpellDamageSchoolDmg(uint32 effect_idx)
                     // Chain Lightning (Simone the Seductress)
                     case 23206:
                     {
-                        if (unitTarget->HasAura(20190))     // reduce damage by 75% if target has Aspect of the Wild (Rank 2)
+                        if (unitTarget->HasAura(20190,0))     // reduce damage by 75% if target has Aspect of the Wild (Rank 2)
                             damage *= 0.25;
                          break;
                     }
