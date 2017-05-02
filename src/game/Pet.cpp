@@ -121,6 +121,16 @@ void Pet::AddToWorld()
         ObjectAccessor::Instance().AddObject(this);
         Unit::AddToWorld();
     }
+
+    // Prevent stuck pets when zoning. Pets default to "follow" when added to world
+    // so we'll reset flags and let the AI handle things
+    if (GetCharmInfo() && GetCharmInfo()->HasCommandState(COMMAND_FOLLOW))
+    {
+        GetCharmInfo()->SetIsCommandAttack(false);
+        GetCharmInfo()->SetIsAtStay(false);
+        GetCharmInfo()->SetIsFollowing(false);
+        GetCharmInfo()->SetIsReturning(false);
+    }
 }
 
 void Pet::RemoveFromWorld()
@@ -319,7 +329,7 @@ bool Pet::LoadPetFromDB( Unit* owner, uint32 petentry, uint32 petnumber, bool cu
     // since last save (in seconds)
     uint32 timediff = (time(NULL) - fields[18].GetUInt32());
 
-    delete result;
+    result = NULL;
 
     //load spells/cooldowns/auras
     SetCanModifyStats(true);
@@ -344,8 +354,13 @@ bool Pet::LoadPetFromDB( Unit* owner, uint32 petentry, uint32 petnumber, bool cu
     }
     else
     {
-        SetHealth(savedhealth > GetMaxHealth() ? GetMaxHealth() : savedhealth);
-        SetPower(POWER_MANA, savedmana > GetMaxPower(POWER_MANA) ? GetMaxPower(POWER_MANA) : savedmana);
+        if (!savedhealth && getPetType() == HUNTER_PET)
+            setDeathState(JUST_DIED);
+        else
+        {
+            SetHealth(savedhealth > GetMaxHealth() ? GetMaxHealth() : (!savedhealth ? 1 : savedhealth));
+            SetPower(POWER_MANA, savedmana > GetMaxPower(POWER_MANA) ? GetMaxPower(POWER_MANA) : savedmana);
+        }
     }
 
     AIM_Initialize();
@@ -383,6 +398,11 @@ bool Pet::LoadPetFromDB( Unit* owner, uint32 petentry, uint32 petnumber, bool cu
         }
     }
 
+    //set last used pet number (for use in BG's)
+    if (owner->GetTypeId() == TYPEID_PLAYER && isControlled() && !isTemporarySummoned() && (getPetType() == SUMMON_PET || getPetType() == HUNTER_PET))
+        ((Player*)owner)->SetLastPetNumber(pet_number);
+
+    delete result;
     return true;
 }
 
@@ -397,6 +417,9 @@ void Pet::SavePetToDB(PetSaveMode mode)
 
     uint32 curhealth = GetHealth();
     uint32 curmana = GetPower(POWER_MANA);
+
+    // save auras before possibly removing them
+    _SaveAuras();
 
     switch(mode)
     {
@@ -416,7 +439,6 @@ void Pet::SavePetToDB(PetSaveMode mode)
 
     _SaveSpells();
     _SaveSpellCooldowns();
-    _SaveAuras();
 
     switch(mode)
     {
@@ -1171,12 +1193,14 @@ bool Pet::InitStatsForLevel(uint32 petlevel)
                     SetCreateHealth(100 + 120*petlevel);
                     SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, float(petlevel - (petlevel / 4)));
                     SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float(petlevel + (petlevel / 4)));
+                    ApplySpellImmune(0, IMMUNITY_SCHOOL, SPELL_SCHOOL_MASK_NATURE, true);
                     break;
                 case 15438: //fire elemental
                     SetCreateHealth(40*petlevel);
                     SetCreateMana(28 + 10*petlevel);
                     SetBaseWeaponDamage(BASE_ATTACK, MINDAMAGE, float(petlevel * 4 - petlevel));
                     SetBaseWeaponDamage(BASE_ATTACK, MAXDAMAGE, float(petlevel * 4 + petlevel));
+                    ApplySpellImmune(0, IMMUNITY_SCHOOL, SPELL_SCHOOL_MASK_FIRE, true);
                     break;
                 default:
             SetCreateMana(28 + 10*petlevel);
@@ -1192,6 +1216,8 @@ bool Pet::InitStatsForLevel(uint32 petlevel)
             }
             break;
         default:
+            SetCreateHealth(urand(cinfo->minhealth, cinfo->maxhealth));
+            SetCreateMana(urand(cinfo->minmana, cinfo->maxmana));
             sLog.outError("Pet have incorrect type (%u) for levelup.", getPetType());
             break;
     }
@@ -1200,6 +1226,7 @@ bool Pet::InitStatsForLevel(uint32 petlevel)
         SetModifierValue(UnitMods(UNIT_MOD_RESISTANCE_START + i), BASE_VALUE, float(createResistance[i]));
 
     UpdateAllStats();
+    UpdateSpeed(MOVE_RUN, true);
 
     SetHealth(GetMaxHealth());
     SetPower(POWER_MANA, GetMaxPower(POWER_MANA));
@@ -1286,13 +1313,17 @@ void Pet::_LoadSpellCooldowns()
 
         if(!m_CreatureSpellCooldowns.empty() && GetOwner())
         {
-            ((Player*)GetOwner())->GetSession()->SendPacket(&data);
+            if (GetOwner()->GetTypeId() == TYPEID_PLAYER)
+                ((Player*)GetOwner())->GetSession()->SendPacket(&data);
         }
     }
 }
 
 void Pet::_SaveSpellCooldowns()
 {
+    if (getPetType() == SUMMON_PET) //don't save cooldowns for temp pets, thats senseless
+        return;
+
     CharacterDatabase.PExecute("DELETE FROM pet_spell_cooldown WHERE guid = '%u'", m_charmInfo->GetPetNumber());
 
     time_t curTime = time(NULL);
@@ -1442,6 +1473,11 @@ void Pet::_SaveAuras()
             // save previous spellEffectPair to db
             itr2--;
             SpellEntry const *spellInfo = itr2->second->GetSpellProto();
+
+            // Dont Save Bestial Wrath
+            if (spellInfo->Id == 19574)
+                break;
+
             /// do not save single target auras (unless they were cast by the player)
             if (!(itr2->second->GetCasterGUID() != GetGUID() && IsSingleTargetSpell(spellInfo)))
             {
@@ -1503,14 +1539,22 @@ bool Pet::addSpell(uint16 spell_id, uint16 active, PetSpellState state, uint16 s
     {
         if (itr->second->state == PETSPELL_REMOVED)
         {
-            delete itr->second;
+            PetSpell *temp = itr->second;
             m_spells.erase(itr);
+            delete temp;
+
             state = PETSPELL_CHANGED;
         }
         else if (state == PETSPELL_UNCHANGED && itr->second->state != PETSPELL_UNCHANGED)
         {
             // can be in case spell loading but learned at some previous spell loading
             itr->second->state = PETSPELL_UNCHANGED;
+
+            if (active == ACT_ENABLED)
+                ToggleAutocast(spell_id, true);
+            else if (active == ACT_DISABLED)
+                ToggleAutocast(spell_id, false);
+
             return false;
         }
         else
@@ -1603,8 +1647,9 @@ void Pet::removeSpell(uint16 spell_id)
 
     if(itr->second->state == PETSPELL_NEW)
     {
-        delete itr->second;
+        PetSpell *temp = itr->second;
         m_spells.erase(itr);
+        delete temp;
     }
     else
         itr->second->state = PETSPELL_REMOVED;
@@ -1617,8 +1662,9 @@ bool Pet::_removeSpell(uint16 spell_id)
     PetSpellMap::iterator itr = m_spells.find(spell_id);
     if (itr != m_spells.end())
     {
-        delete itr->second;
+        PetSpell *temp = itr->second;
         m_spells.erase(itr);
+        delete temp;
         return true;
     }
     return false;
@@ -1627,12 +1673,17 @@ bool Pet::_removeSpell(uint16 spell_id)
 void Pet::InitPetCreateSpells()
 {
     m_charmInfo->InitPetActionBar();
+    for (PetSpellMap::iterator i = m_spells.begin(); i != m_spells.end(); ++i)
+        delete i->second;
 
     m_spells.clear();
     int32 usedtrainpoints = 0, petspellid;
     PetCreateSpellEntry const* CreateSpells = objmgr.GetPetCreateSpellEntry(GetEntry());
     if(CreateSpells)
     {
+        Unit* owner = GetOwner();
+        Player* p_owner = owner && owner->GetTypeId() == TYPEID_PLAYER ? (Player*)owner : NULL;
+
         for(uint8 i = 0; i < 4; i++)
         {
             if(!CreateSpells->spellid[i])
@@ -1645,11 +1696,11 @@ void Pet::InitPetCreateSpells()
             if(learn_spellproto->Effect[0] == SPELL_EFFECT_LEARN_SPELL || learn_spellproto->Effect[0] == SPELL_EFFECT_LEARN_PET_SPELL)
             {
                 petspellid = learn_spellproto->EffectTriggerSpell[0];
-                Unit* owner = GetOwner();
-                if(owner->GetTypeId() == TYPEID_PLAYER && !((Player*)owner)->HasSpell(learn_spellproto->Id))
+
+                if (p_owner && !p_owner->HasSpell(learn_spellproto->Id))
                 {
                     if(IsPassiveSpell(petspellid))          //learn passive skills when tamed, not sure if thats right
-                        ((Player*)owner)->learnSpell(learn_spellproto->Id);
+                        p_owner->learnSpell(learn_spellproto->Id);
                     else
                         AddTeachSpell(learn_spellproto->EffectTriggerSpell[0], learn_spellproto->Id);
                 }
@@ -1737,8 +1788,12 @@ void Pet::ToggleAutocast(uint32 spellid, bool apply)
         if (i == m_autospells.size())
         {
             m_autospells.push_back(spellid);
-            itr->second->active = ACT_ENABLED;
-            itr->second->state = PETSPELL_CHANGED;
+            if (itr->second->active != ACT_ENABLED)
+            {
+                itr->second->active = ACT_ENABLED;
+                if (itr->second->state != PETSPELL_NEW)
+                    itr->second->state = PETSPELL_CHANGED;
+            }
         }
     }
     else
@@ -1748,8 +1803,12 @@ void Pet::ToggleAutocast(uint32 spellid, bool apply)
         if (i < m_autospells.size())
         {
             m_autospells.erase(itr2);
-            itr->second->active = ACT_DISABLED;
-            itr->second->state = PETSPELL_CHANGED;
+            if (itr->second->active != ACT_DISABLED)
+            {
+                itr->second->active = ACT_DISABLED;
+                if (itr->second->state != PETSPELL_NEW)
+                    itr->second->state = PETSPELL_CHANGED;
+            }
         }
     }
 }
@@ -1778,7 +1837,13 @@ bool Pet::Create(uint32 guidlow, Map *map, uint32 Entry, uint32 pet_number)
 
 bool Pet::HasSpell(uint32 spell) const
 {
-    return (m_spells.find(spell) != m_spells.end());
+    if(getPetType() == POSSESSED_PET)
+        return Creature::HasSpell(spell);
+    else
+    {
+        PetSpellMap::const_iterator itr = m_spells.find(spell);
+        return (itr != m_spells.end() && itr->second->state != PETSPELL_REMOVED);
+    }
 }
 
 // Get all passive spells in our skill line
