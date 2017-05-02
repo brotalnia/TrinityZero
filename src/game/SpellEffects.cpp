@@ -3454,6 +3454,9 @@ void Spell::EffectDispel(uint32 i)
                 if (heal_spell)
                     m_caster->CastSpell(m_caster, heal_spell, true);
             }
+             // Paladin Tier 3 Set 8 Piece Bonus - Heal on Cleanse
+            else if ((m_spellInfo->Id == 4987) && m_caster->HasAura(28787,0))
+                 m_caster->CastSpell(unitTarget, 28788, true);
         }
         // Send fail log to client
         if (!fail_list.empty())
