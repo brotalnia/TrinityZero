@@ -317,7 +317,7 @@ void Spell::SpellDamageSchoolDmg(uint32 effect_idx)
         {
             case SPELLFAMILY_GENERIC:
             {
-				// Meteor like spells (divided damage to targets)
+                // Meteor like spells (divided damage to targets)
                 if(m_customAttr & SPELL_ATTR_CU_SHARE_DAMAGE)
                 {
                     uint32 count = 0;
@@ -351,15 +351,15 @@ void Spell::SpellDamageSchoolDmg(uint32 effect_idx)
                             damage *= 0.25;
                          break;
                     }
-					// T2 Set Bonus Judgement spell that shouldn't benefit from Spell Damage
-					case 23590:
-					{
-						if (damage >= 0)
-							{ m_damage += damage; }
+                    // T2 Set Bonus Judgement spell that shouldn't benefit from Spell Damage
+                    case 23590:
+                    {
+                        if (damage >= 0)
+                            { m_damage += damage; }
 
-						return;
-						break;
-					}
+                        return;
+                        break;
+                    }
                 }
                 break;
             }
@@ -407,7 +407,7 @@ void Spell::SpellDamageSchoolDmg(uint32 effect_idx)
                     damage += int32(m_caster->GetPower(POWER_ENERGY) * multiple);
                     m_caster->SetPower(POWER_ENERGY, 0);
                 }
-				// Rake
+                // Rake
                 else if(m_spellInfo->SpellFamilyFlags & 0x0000000000001000LL)
                 {
                     damage += int32(m_caster->GetTotalAttackPowerValue(BASE_ATTACK) / 100);
@@ -452,8 +452,8 @@ void Spell::SpellDamageSchoolDmg(uint32 effect_idx)
                 break;
         }
 
-		if(m_originalCaster && damage > 0)
-			damage = m_originalCaster->SpellDamageBonus(unitTarget, m_spellInfo, (uint32)damage, SPELL_DIRECT_DAMAGE);
+        if(m_originalCaster && damage > 0)
+            damage = m_originalCaster->SpellDamageBonus(unitTarget, m_spellInfo, (uint32)damage, SPELL_DIRECT_DAMAGE);
 
         if (damage >= 0)
             { m_damage += damage; }
@@ -965,13 +965,13 @@ void Spell::EffectDummy(uint32 i)
                     if (m_caster->GetTypeId() != TYPEID_PLAYER)
                         { return; }
 
-					m_caster->CastSpell(m_caster, 23230, true);
+                    m_caster->CastSpell(m_caster, 23230, true);
 
                     damage = uint32(damage * (m_caster->GetInt32Value(UNIT_FIELD_ATTACK_POWER)) / 100);
-					m_caster->CastCustomSpell(m_caster, 23234, &damage, NULL, NULL, true, NULL);
+                    m_caster->CastCustomSpell(m_caster, 23234, &damage, NULL, NULL, true, NULL);
 
                     return;
-				}
+                }
                 case 20577: // Cannibalize
                     if (unitTarget)
                         m_caster->CastSpell(m_caster,20578,false,NULL);
@@ -1421,8 +1421,8 @@ void Spell::EffectDummy(uint32 i)
 
                 spell_id = 20647;
                 bp = damage+int32(m_caster->GetPower(POWER_RAGE) * m_spellInfo->DmgMultiplier[i]);
-				m_caster->CastCustomSpell(unitTarget, spell_id, &bp, NULL, NULL, true, 0);
-				//m_caster->SpellNonMeleeDamageLog(unitTarget, spell_id, bp, true, true);
+                m_caster->CastCustomSpell(unitTarget, spell_id, &bp, NULL, NULL, true, 0);
+                //m_caster->SpellNonMeleeDamageLog(unitTarget, spell_id, bp, true, true);
                 m_caster->SetPower(POWER_RAGE,0);
                 break;
             }
@@ -1648,20 +1648,8 @@ void Spell::EffectDummy(uint32 i)
 
                     if(m_caster->IsFriendlyTo(unitTarget))
                         m_caster->CastSpell(unitTarget, heal, true, 0);
-					/*{
-						SpellEntry const *spellInfo2 = sSpellStore.LookupEntry(heal);
-						Spell *shockSpell = new Spell(m_caster,spellInfo2,true);
-						int32 healamount = unitTarget->ModifyHealth(m_caster->SpellHealingBonus(spellInfo2,shockSpell->CalculateDamage(0, unitTarget),HEAL,unitTarget));
-						m_caster->SendHealSpellLog(unitTarget,heal,healamount);
-					}*/
                     else
                         m_caster->CastSpell(unitTarget, hurt, true, 0);
-					/*{
-						SpellEntry const *spellInfo2 = sSpellStore.LookupEntry(hurt);
-						Spell *shockSpell = new Spell(m_caster,spellInfo2,true);
-						m_caster->SpellNonMeleeDamageLog(unitTarget, hurt, shockSpell->CalculateDamage(0, unitTarget), true, true);
-					}*/
-					
 
                     return;
                 }
@@ -4982,40 +4970,6 @@ void Spell::EffectScriptEffect(uint32 effIndex)
                 }
 
                 m_caster->CastSpell(unitTarget,spellId2,true);
-				/*SpellEntry const *spellInfo2 = sSpellStore.LookupEntry(spellId2);
-				switch(spellId2)
-				{
-					// judgement of command
-					case 20425:
-					case 20961:
-					case 20962:
-					case 20967:
-					case 20968:
-					{
-						SpellEntry const *spellInfo3 = sSpellStore.LookupEntry(spellInfo2->EffectBasePoints[0]);
-						Spell *judgeSpell = new Spell(m_caster,spellInfo3,true);
-						if(!unitTarget->hasUnitState(UNIT_STAT_STUNNED))
-							m_caster->SpellNonMeleeDamageLog(unitTarget, spellId2, judgeSpell->CalculateDamage(0, unitTarget)/2, true, true);
-						else
-							m_caster->SpellNonMeleeDamageLog(unitTarget, spellId2, judgeSpell->CalculateDamage(0, unitTarget), true, true);
-						break;
-					}
-					// judgement of righteousness
-					case 20187:
-					case 20280:
-					case 20281:
-					case 20282:
-					case 20283:
-					case 20284:
-					case 20285:
-					case 20286:
-					{
-						Spell *judgeSpell2 = new Spell(m_caster,spellInfo2,true);
-						m_caster->SpellNonMeleeDamageLog(unitTarget, spellId2, judgeSpell2->CalculateDamage(0, unitTarget), true, true);
-						break;
-					}
-				}
-				m_caster->AddAura(spellId2,unitTarget);*/
 
                 return;
             }
