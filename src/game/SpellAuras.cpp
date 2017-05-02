@@ -3939,7 +3939,7 @@ void Aura::HandleModResistancePercent(bool apply, bool Real)
         if(m_modifier.m_miscvalue & int32(1<<i))
         {
             m_target->HandleStatModifier(UnitMods(UNIT_MOD_RESISTANCE_START + i), TOTAL_PCT, float(GetModifierValue()), apply);
-            if(m_target->GetTypeId() == TYPEID_PLAYER || ((Creature*)m_target)->isPet())
+            if(m_target->GetTypeId() == TYPEID_PLAYER)
             {
                 m_target->ApplyResistanceBuffModsPercentMod(SpellSchools(i),true,GetModifierValue(), apply);
                 m_target->ApplyResistanceBuffModsPercentMod(SpellSchools(i),false,GetModifierValue(), apply);
