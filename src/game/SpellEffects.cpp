@@ -2480,18 +2480,30 @@ void Spell::SpellDamageHeal(uint32 /*i*/)
 
         int32 addhealth = damage;
 
-        // Vessel of the Naaru (Vial of the Sunwell trinket)
-        if (m_spellInfo->Id == 45064)
+        // Holy Light and Flash of Light - Increase healing amount by Blessing of Light
+        if ((m_spellInfo->SpellFamilyName == SPELLFAMILY_PALADIN) && ((m_spellInfo->SpellIconID  == 242) || (m_spellInfo->SpellIconID  == 70)))
         {
-            // Amount of heal - depends from stacked Holy Energy
             int damageAmount = 0;
             Unit::AuraList const& mDummyAuras = m_caster->GetAurasByType(SPELL_AURA_DUMMY);
             for(Unit::AuraList::const_iterator i = mDummyAuras.begin();i != mDummyAuras.end(); ++i)
-                if((*i)->GetId() == 45062)
-                    damageAmount+=(*i)->GetModifierValue();
-            if (damageAmount)
-                m_caster->RemoveAurasDueToSpell(45062);
+            {
+                SpellEntry const *spell = (*i)->GetSpellProto();
+                if(((spell->SpellIconID == 540) || (spell->SpellIconID == 1801)) && (spell->SpellFamilyName == SPELLFAMILY_PALADIN))
+                {
+                    if ((m_spellInfo->SpellIconID  == 70) && ((*i)->GetEffIndex() == 0))
+                    {
+                        damageAmount+=(*i)->GetModifierValue();
+                        break;
+                    }
+                    else if ((m_spellInfo->SpellIconID  == 242) && ((*i)->GetEffIndex() == 1))
+                    {
+                        damageAmount+=(*i)->GetModifierValue();
+                        break;
+                    }
+                }
+            }
 
+            addhealth = caster->SpellHealingBonus(m_spellInfo, addhealth,HEAL, unitTarget);
             addhealth += damageAmount;
         }
         // Swiftmend - consumes Regrowth or Rejuvenation
