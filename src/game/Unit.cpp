@@ -12051,6 +12051,33 @@ Pet* Unit::CreateTamedPetFrom(Creature* creatureTarget,uint32 spell_id)
     return pet;
 }
 
+void Unit::RemoveAurasAtMechanicImmunity(uint32 mechMask, uint32 exceptSpellId, bool non_positive /*= false*/)
+{
+    Unit::AuraMap& Auras = this->GetAuras();
+    for(Unit::AuraMap::iterator iter = Auras.begin(), next; iter != Auras.end(); iter = next)
+    {
+        next = iter;
+        ++next;
+        Aura *aur = iter->second;
+        SpellEntry const *spell = aur->GetSpellProto();
+        if (spell->Id == exceptSpellId)
+            continue;
+        else if (non_positive && aur->IsPositive())
+            continue;
+        else if (spell->Attributes & SPELL_ATTR_UNAFFECTED_BY_INVULNERABILITY)
+            continue;
+        else if (GetSpellMechanicMask(spell, aur->GetEffIndex()) & mechMask)
+        {
+            RemoveAurasDueToSpell(spell->Id);
+
+            if(Auras.empty())
+                break;
+            else
+                next = Auras.begin();
+        }
+    }
+}
+
 bool Unit::IsTriggeredAtSpellProcEvent(Aura* aura, SpellEntry const* procSpell, uint32 procFlag, uint32 procExtra, WeaponAttackType attType, bool isVictim, bool active, SpellProcEventEntry const*& spellProcEvent )
 {
     SpellEntry const* spellProto = aura->GetSpellProto ();
