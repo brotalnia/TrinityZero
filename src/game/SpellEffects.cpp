@@ -4940,39 +4940,45 @@ void Spell::EffectScriptEffect(uint32 effIndex)
 
     if( m_spellInfo->SpellFamilyName == SPELLFAMILY_PALADIN )
     {
-        switch(m_spellInfo->SpellFamilyFlags)
+        // Flash of Light
+        if (m_spellInfo->SpellIconID  == 242)
         {
-            // Judgement
-            case 0x800000:
-            {
-                uint32 spellId2 = 0;
-
-                // all seals have aura dummy
-                Unit::AuraList const& m_dummyAuras = m_caster->GetAurasByType(SPELL_AURA_DUMMY);
-                for(Unit::AuraList::const_iterator itr = m_dummyAuras.begin(); itr != m_dummyAuras.end(); ++itr)
-                {
-                    SpellEntry const *spellInfo = (*itr)->GetSpellProto();
-
-                    // search seal (all seals have judgement's aura dummy spell id in 2 effect
-                    if ( !spellInfo || !IsSealSpell((*itr)->GetSpellProto()) || (*itr)->GetEffIndex() != 2 )
-                        continue;
-
-                    // must be calculated base at raw base points in spell proto, GetModifier()->m_value for S.Righteousness modified by SPELLMOD_DAMAGE
-                    spellId2 = (*itr)->GetSpellProto()->EffectBasePoints[2]+1;
-
-                    if(spellId2 <= 1)
-                        continue;
-
-                    // found, remove seal
-                    m_caster->RemoveAurasDueToSpell((*itr)->GetId());
-
-                    break;
-                }
-
-                m_caster->CastSpell(unitTarget,spellId2,true);
-
+            if (!unitTarget || !unitTarget->isAlive())
                 return;
+            int32 heal = damage;
+            
+            int32 spellid = m_spellInfo->Id;            // send main spell id as basepoints for not used effect
+            m_caster->CastCustomSpell(unitTarget, 19993, &heal, &spellid, NULL, true);
+        }
+        else if (m_spellInfo->SpellFamilyFlags == 0x800000) // Judgement
+        {
+            uint32 spellId2 = 0;
+
+            // all seals have aura dummy
+            Unit::AuraList const& m_dummyAuras = m_caster->GetAurasByType(SPELL_AURA_DUMMY);
+            for(Unit::AuraList::const_iterator itr = m_dummyAuras.begin(); itr != m_dummyAuras.end(); ++itr)
+            {
+                SpellEntry const *spellInfo = (*itr)->GetSpellProto();
+
+                // search seal (all seals have judgement's aura dummy spell id in 2 effect
+                if ( !spellInfo || !IsSealSpell((*itr)->GetSpellProto()) || (*itr)->GetEffIndex() != 2 )
+                    continue;
+
+                // must be calculated base at raw base points in spell proto, GetModifier()->m_value for S.Righteousness modified by SPELLMOD_DAMAGE
+                spellId2 = (*itr)->GetSpellProto()->EffectBasePoints[2]+1;
+
+                if(spellId2 <= 1)
+                    continue;
+
+                // found, remove seal
+                m_caster->RemoveAurasDueToSpell((*itr)->GetId());
+
+                break;
             }
+
+            m_caster->CastSpell(unitTarget,spellId2,true);
+
+            return;
         }
     }
 
