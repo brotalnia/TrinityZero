@@ -714,6 +714,9 @@ void Spell::EffectDummy(uint32 i)
                     m_caster->CastSpell(unitTarget, spell_id, true, NULL, NULL, m_originalCasterGUID);
                     return;
                 }
+                case 27517: // Summon Thelrin DND (Banner of Provocation)
+                    m_caster->SummonCreature(16059, 590.6309, -181.061, -53.90, 5.33, TEMPSUMMON_DEAD_DESPAWN, 0);
+                    break;
                 case 25720: //spell Place Loot / Quest 8606 Decoy!
                 {
                     if (!m_originalCaster)
