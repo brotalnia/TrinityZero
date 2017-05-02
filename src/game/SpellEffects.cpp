@@ -2484,7 +2484,7 @@ void Spell::SpellDamageHeal(uint32 /*i*/)
         if ((m_spellInfo->SpellFamilyName == SPELLFAMILY_PALADIN) && ((m_spellInfo->SpellIconID  == 242) || (m_spellInfo->SpellIconID  == 70)))
         {
             int damageAmount = 0;
-            Unit::AuraList const& mDummyAuras = m_caster->GetAurasByType(SPELL_AURA_DUMMY);
+            Unit::AuraList const& mDummyAuras = unitTarget->GetAurasByType(SPELL_AURA_DUMMY);
             for(Unit::AuraList::const_iterator i = mDummyAuras.begin();i != mDummyAuras.end(); ++i)
             {
                 SpellEntry const *spell = (*i)->GetSpellProto();
