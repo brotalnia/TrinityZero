@@ -1364,7 +1364,45 @@ void Spell::EffectDummy(uint32 i)
         case SPELLFAMILY_MAGE:
             switch(m_spellInfo->Id )
             {
-                case 12472:                                 // Cold Snap
+                case 11189: // Frost Warding
+                case 28332:
+                {
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    // increase reflaction chanced (effect 1) of Frost Ward, removed in aura boosts
+                    SpellModifier *mod = new SpellModifier;
+                        mod->op = SPELLMOD_EFFECT2;
+                        mod->value = damage;
+                        mod->type = SPELLMOD_FLAT;
+                        mod->spellId = m_spellInfo->Id;
+                        mod->effectId = i;
+                        mod->lastAffected = NULL;
+                        mod->mask = ACE_UINT64_LITERAL(0x0000000000000100);
+                        mod->charges = 0;
+                    ((Player*)unitTarget)->AddSpellMod(mod, true);
+                    break;
+                }
+                case 11094: // Improved Fire Ward
+                case 13043:
+                {
+                    if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
+                        return;
+
+                    // increase reflaction chanced (effect 1) of Fire Ward, removed in aura boosts
+                    SpellModifier *mod = new SpellModifier;
+                        mod->op = SPELLMOD_EFFECT2;
+                        mod->value = damage;
+                        mod->type = SPELLMOD_FLAT;
+                        mod->spellId = m_spellInfo->Id;
+                        mod->effectId = i;
+                        mod->lastAffected = NULL;
+                        mod->mask = ACE_UINT64_LITERAL(0x0000000000000008);
+                        mod->charges = 0;
+                    ((Player*)unitTarget)->AddSpellMod(mod, true);
+                    break;
+                }
+                case 12472: // Cold Snap
                 {
                     if(m_caster->GetTypeId()!=TYPEID_PLAYER)
                         return;
@@ -1393,16 +1431,6 @@ void Spell::EffectDummy(uint32 i)
                     }
                     return;
                 }
-                case 32826:
-                {
-                    if ( unitTarget && unitTarget->GetTypeId() == TYPEID_UNIT )
-                    {
-                        //Polymorph Cast Visual Rank 1
-                        const uint32 spell_list[6] = {32813, 32816, 32817, 32818, 32819, 32820};
-                        unitTarget->CastSpell( unitTarget, spell_list[urand(0, 5)], true);
-                    }
-                    return;
-                }
             }
             break;
         case SPELLFAMILY_WARRIOR:
@@ -1422,16 +1450,36 @@ void Spell::EffectDummy(uint32 i)
                 spell_id = 20647;
                 bp = damage+int32(m_caster->GetPower(POWER_RAGE) * m_spellInfo->DmgMultiplier[i]);
                 m_caster->CastCustomSpell(unitTarget, spell_id, &bp, NULL, NULL, true, 0);
-                //m_caster->SpellNonMeleeDamageLog(unitTarget, spell_id, bp, true, true);
                 m_caster->SetPower(POWER_RAGE,0);
                 break;
             }
-            if(m_spellInfo->Id==21977)                      //Warrior's Wrath
+            // Warrior's Wrath
+            if(m_spellInfo->Id==21977)
             {
                 if(!unitTarget)
                     return;
 
                 m_caster->CastSpell(unitTarget,21887,true); // spell mod
+                return;
+            }
+             // Nefarian Class Call Chaman Corrupted Totems
+            if (m_spellInfo->Id == 23424)
+            {
+                switch (urand(0, 3))
+                {
+                    case 0:        // Corrupted Fire Nova Totem
+                        m_caster->CastSpell(m_caster, 23419, true);
+                        break;
+                    case 1:        // Corrupted Stoneskin Totem
+                        m_caster->CastSpell(m_caster, 23420, true);
+                        break;
+                    case 2:        // Corrupted Windfury Totem
+                        m_caster->CastSpell(m_caster, 23423, true);
+                        break;
+                    case 3:        // Corrupted Healing Stream Totem
+                        m_caster->CastSpell(m_caster, 23422, true);
+                        break;
+                }
                 return;
             }
             break;
@@ -1477,7 +1525,7 @@ void Spell::EffectDummy(uint32 i)
         case SPELLFAMILY_PRIEST:
             switch(m_spellInfo->Id )
             {
-                case 28598:                                 // Touch of Weakness triggered spell
+                case 28598: // Touch of Weakness triggered spell
                 {
                     if(!unitTarget || !m_triggeredByAuraSpell)
                         return;
@@ -1516,12 +1564,7 @@ void Spell::EffectDummy(uint32 i)
         case SPELLFAMILY_ROGUE:
             switch(m_spellInfo->Id )
             {
-                case 31231:                                 // Cheat Death
-                {
-                    m_caster->CastSpell(m_caster,45182,true);
-                    return;
-                }
-                case 5938:                                  // Shiv
+                case 5938:  // Shiv
                 {
                     if(m_caster->GetTypeId() != TYPEID_PLAYER)
                         return;
@@ -1559,36 +1602,9 @@ void Spell::EffectDummy(uint32 i)
             }
             break;
         case SPELLFAMILY_HUNTER:
-            // Kill command
-            if(m_spellInfo->SpellFamilyFlags & 0x00080000000000LL)
-            {
-                if(m_caster->getClass()!=CLASS_HUNTER)
-                    return;
-
-                // clear hunter crit aura state
-                m_caster->ModifyAuraState(AURA_STATE_HUNTER_CRIT_STRIKE,false);
-
-                // additional damage from pet to pet target
-                Pet* pet = m_caster->GetPet();
-                if(!pet || !pet->getVictim())
-                    return;
-
-                uint32 spell_id = 0;
-                switch (m_spellInfo->Id)
-                {
-                case 34026: spell_id = 34027; break;        // rank 1
-                default:
-                    sLog.outError("Spell::EffectDummy: Spell %u not handled in KC",m_spellInfo->Id);
-                    return;
-                }
-
-                pet->CastSpell(pet->getVictim(), spell_id, true);
-                return;
-            }
-
             switch(m_spellInfo->Id)
             {
-                case 23989:                                 //Readiness talent
+                case 23989: //Readiness talent
                 {
                     if(m_caster->GetTypeId()!=TYPEID_PLAYER)
                         return;
@@ -1612,23 +1628,12 @@ void Spell::EffectDummy(uint32 i)
                     }
                     return;
                 }
-                case 37506:                                 // Scatter Shot
-                {
-                    if (m_caster->GetTypeId()!=TYPEID_PLAYER)
-                        return;
-
-                    // break Auto Shot and autohit
-                    m_caster->InterruptSpell(CURRENT_AUTOREPEAT_SPELL);
-                    m_caster->AttackStop();
-                    ((Player*)m_caster)->SendAttackSwingCancelAttack();
-                    return;
-                }
             }
             break;
         case SPELLFAMILY_PALADIN:
             switch(m_spellInfo->SpellIconID)
             {
-                case  156:                                  // Holy Shock
+                case  156:  // Holy Shock
                 {
                     if(!unitTarget)
                         return;
@@ -1653,7 +1658,7 @@ void Spell::EffectDummy(uint32 i)
 
                     return;
                 }
-                case 561:                                   // Judgement of command
+                case 561:   // Judgement of command
                 {
                     if(!unitTarget)
                         return;
@@ -1687,72 +1692,6 @@ void Spell::EffectDummy(uint32 i)
                     return;
                 }
             }
-
-            switch(m_spellInfo->Id)
-            {
-                case 31789:                                 // Righteous Defense (step 1)
-                {
-                    // 31989 -> dummy effect (step 1) + dummy effect (step 2) -> 31709 (taunt like spell for each target)
-
-                    // non-standard cast requirement check
-                    if (!unitTarget || unitTarget->getAttackers().empty())
-                    {
-                        // clear cooldown at fail
-                        if(m_caster->GetTypeId()==TYPEID_PLAYER)
-                        {
-                            ((Player*)m_caster)->RemoveSpellCooldown(m_spellInfo->Id);
-
-                            WorldPacket data(SMSG_CLEAR_COOLDOWN, (4+8));
-                            data << uint32(m_spellInfo->Id);
-                            data << uint64(m_caster->GetGUID());
-                            ((Player*)m_caster)->GetSession()->SendPacket(&data);
-                        }
-
-                        SendCastResult(SPELL_FAILED_TARGET_AFFECTING_COMBAT);
-                        return;
-                    }
-
-                    // Righteous Defense (step 2) (in old version 31980 dummy effect)
-                    // Clear targets for eff 1
-                    for(std::list<TargetInfo>::iterator ihit= m_UniqueTargetInfo.begin();ihit != m_UniqueTargetInfo.end();++ihit)
-                        ihit->effectMask &= ~(1<<1);
-
-                    // not empty (checked)
-                    Unit::AttackerSet const& attackers = unitTarget->getAttackers();
-
-                    // chance to be selected from list
-                    float chance = 100.0f/attackers.size();
-                    uint32 count=0;
-                    for(Unit::AttackerSet::const_iterator aItr = attackers.begin(); aItr != attackers.end() && count < 3; ++aItr)
-                    {
-                        if(!roll_chance_f(chance))
-                            continue;
-                        ++count;
-                        AddUnitTarget((*aItr), 1);
-                    }
-
-                    // now let next effect cast spell at each target.
-                    return;
-                }
-                case 37877:                                 // Blessing of Faith
-                {
-                    if(!unitTarget)
-                        return;
-
-                    uint32 spell_id = 0;
-                    switch(unitTarget->getClass())
-                    {
-                        case CLASS_DRUID:   spell_id = 37878; break;
-                        case CLASS_PALADIN: spell_id = 37879; break;
-                        case CLASS_PRIEST:  spell_id = 37880; break;
-                        case CLASS_SHAMAN:  spell_id = 37881; break;
-                        default: return;                    // ignore for not healing classes
-                    }
-
-                    m_caster->CastSpell(m_caster,spell_id,true);
-                    return;
-                }
-            }
             break;
         case SPELLFAMILY_SHAMAN:
             //Shaman Rockbiter Weapon
@@ -1768,8 +1707,6 @@ void Spell::EffectDummy(uint32 i)
                     case 16314: spell_id = 36763; break;    // Rank 5
                     case 16315: spell_id = 36766; break;    // Rank 6
                     case 16316: spell_id = 36771; break;    // Rank 7
-                    case 25479: spell_id = 36775; break;    // Rank 8
-                    case 25485: spell_id = 36499; break;    // Rank 9
                     default:
                         sLog.outError("Spell::EffectDummy: Spell %u not handled in RW",m_spellInfo->Id);
                         return;
@@ -1808,14 +1745,21 @@ void Spell::EffectDummy(uint32 i)
                 return;
             }
 
-            if(m_spellInfo->Id == 39610)                    // Mana-Tide Totem effect
+            // Flametongue Weapon Proc, Ranks
+            if (m_spellInfo->SpellFamilyFlags & SPELLFAMILYFLAG_SHAMAN_FLAMETONGUE)
             {
-                if(!unitTarget || unitTarget->getPowerType() != POWER_MANA)
+                if (!m_CastItem)
+                {
+                    sLog.outError("Spell::EffectDummy: spell %i requires cast Item", m_spellInfo->Id);
                     return;
+                }
+                // found spelldamage coefficients of 0.381% per 0.1 speed and 15.244 per 4.0 speed
+                // but own calculation say 0.385 gives at most one point difference to published values
+                int32 spellDamage = m_caster->SpellBaseDamageBonus(GetSpellSchoolMask(m_spellInfo));
+                float weaponSpeed = (1.0f / 1000) * m_CastItem->GetProto()->Delay;
+                int32 totalDamage = int32((damage + 3.85f * spellDamage) * 0.01 * weaponSpeed);
 
-                // Regenerate 6% of Total Mana Every 3 secs
-                int32 EffectBasePoints0 = unitTarget->GetMaxPower(POWER_MANA)  * damage / 100;
-                m_caster->CastCustomSpell(unitTarget,39609,&EffectBasePoints0,NULL,NULL,true,NULL,NULL,m_originalCasterGUID);
+                m_caster->CastCustomSpell(unitTarget, 10444, &totalDamage, NULL, NULL, true, m_CastItem);
                 return;
             }
 

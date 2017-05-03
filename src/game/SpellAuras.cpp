@@ -1058,8 +1058,36 @@ void Aura::HandleAddModifier(bool apply, bool Real)
         {
             case 17941:    // Shadow Trance
             case 22008:    // Netherwind Focus
-            case 34936:    // Backlash
                 m_procCharges = 1;
+                break;
+        }
+
+        // In pre-TBC wrong spellmods in DBC
+        switch (GetSpellProto()->SpellIconID)
+        {
+            case 143:       // Permafrost Speed Decrease
+                if (GetEffIndex() == 1)
+                    m_modifier.m_miscvalue = SPELLMOD_EFFECT1;
+                break;
+            case 228:       // Improved Curse of Exhaustion Speed Decrease
+                if (GetEffIndex() == 0)
+                    m_modifier.m_miscvalue = SPELLMOD_EFFECT1;
+                break;
+            case 250:       // Camouflage Speed Decrease (13975, 14062, 14063, 14064, 14065)
+                if (GetEffIndex() == 0)
+                    m_modifier.m_miscvalue = SPELLMOD_EFFECT3;
+                break;
+            case 1181:       // Pathfinding Speed Increase (ID = 19560)
+                if (GetEffIndex() == 0)
+                    m_modifier.m_miscvalue = SPELLMOD_EFFECT1;
+                break;
+            case 1494:       // Amplify Curse Speed Decrease (18310, 18311, 18312, 18313)
+                if (GetEffIndex() == 0)
+                    m_modifier.m_miscvalue = SPELLMOD_EFFECT1;
+                break;
+            case 1563:       // Cheetah Sprint (ID = 24348)
+                if (GetEffIndex() == 0)
+                    m_modifier.m_miscvalue = SPELLMOD_EFFECT1;
                 break;
         }
 
