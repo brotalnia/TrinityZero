@@ -4276,10 +4276,20 @@ void Spell::EffectHealMaxHealth(uint32 /*i*/)
     if(!unitTarget->isAlive())
         return;
 
-    uint32 addhealth = unitTarget->GetMaxHealth() - unitTarget->GetHealth();
-    unitTarget->SetHealth(unitTarget->GetMaxHealth());
-    if(m_originalCaster)
-        m_originalCaster->SendHealSpellLog(unitTarget, m_spellInfo->Id, addhealth, false);
+    Unit* caster = m_originalCasterGUID ? m_originalCaster : m_caster;
+
+    uint32 casterhealth = caster->GetMaxHealth();
+    uint32 missinghealth = unitTarget->GetMaxHealth() - unitTarget->GetHealth();
+    if(casterhealth > missinghealth)
+    {
+        unitTarget->SetHealth(unitTarget->GetMaxHealth());
+        caster->SendHealSpellLog(unitTarget, m_spellInfo->Id, missinghealth, false);
+    }
+    else
+    {
+        unitTarget->SetHealth(unitTarget->GetHealth() + casterhealth);
+        caster->SendHealSpellLog(unitTarget, m_spellInfo->Id, casterhealth, false);
+    }
 }
 
 void Spell::EffectInterruptCast(uint32 i)
