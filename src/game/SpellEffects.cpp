@@ -2095,84 +2095,6 @@ void Spell::EffectTeleportUnits(uint32 i)
             }
             return;
         }
-        // Ultrasafe Transporter: Toshley's Station
-        case 36941:
-        {
-            if ( roll_chance_i(50) )                        // 50% success
-            {
-                int32 rand_eff = urand(1,7);
-                switch ( rand_eff )
-                {
-                    case 1:
-                        // soul split - evil
-                        m_caster->CastSpell(m_caster,36900,true);
-                        break;
-                    case 2:
-                        // soul split - good
-                        m_caster->CastSpell(m_caster,36901,true);
-                        break;
-                    case 3:
-                        // Increase the size
-                        m_caster->CastSpell(m_caster,36895,true);
-                        break;
-                    case 4:
-                        // Decrease the size
-                        m_caster->CastSpell(m_caster,36893,true);
-                        break;
-                    case 5:
-                    // Transform
-                    {
-                        if (((Player*)m_caster)->GetTeam() == ALLIANCE )
-                            m_caster->CastSpell(m_caster,36897,true);
-                        else
-                            m_caster->CastSpell(m_caster,36899,true);
-                        break;
-                    }
-                    case 6:
-                        // chicken
-                        m_caster->CastSpell(m_caster,36940,true);
-                        break;
-                    case 7:
-                        // evil twin
-                        m_caster->CastSpell(m_caster,23445,true);
-                        break;
-                }
-            }
-            return;
-        }
-        // Dimensional Ripper - Area 52
-        case 36890:
-        {
-            if ( roll_chance_i(50) )                        // 50% success
-            {
-                int32 rand_eff = urand(1,4);
-                switch ( rand_eff )
-                {
-                    case 1:
-                        // soul split - evil
-                        m_caster->CastSpell(m_caster,36900,true);
-                        break;
-                    case 2:
-                        // soul split - good
-                        m_caster->CastSpell(m_caster,36901,true);
-                        break;
-                    case 3:
-                        // Increase the size
-                        m_caster->CastSpell(m_caster,36895,true);
-                        break;
-                    case 4:
-                    // Transform
-                    {
-                        if (((Player*)m_caster)->GetTeam() == ALLIANCE )
-                            m_caster->CastSpell(m_caster,36897,true);
-                        else
-                            m_caster->CastSpell(m_caster,36899,true);
-                        break;
-                    }
-                }
-            }
-            return;
-        }
     }
 }
 
@@ -2196,6 +2118,17 @@ void Spell::EffectApplyAura(uint32 i)
         return;
 
     sLog.outDebug("Spell: Aura is: %u", m_spellInfo->EffectApplyAuraName[i]);
+
+    // Sayge's Dark Fortune: +1-10% (random) (Youfie)
+    if (m_spellInfo->SpellIconID == 1595 && m_spellInfo->SpellVisual == 7042)
+        damage = m_spellInfo->Id == 23769 ? urand(1, 25) : urand(1, 10);
+    // Gnomish Death Ray
+    // rarely has a chance of dealing double damage, 14.29% chance (guess)
+    // for now we use linear level scaling, but this is likely incorrect (hp pools don't scale exactly linearly)
+    // there is some speculation that this should be tied to Engineering skill level, but since you don't need Engineering to use the item at all this seems doubtful
+    else if (m_spellInfo->Id == 13278)
+        damage = i == 0 ? int32(urand(600, 1200) * (caster->getLevel() / 60.0f)) * (!urand(0,6) ? 2 : 1)
+                                                                 : m_currentBasePoints[0] * 0.1249f;
 
     Aura* Aur = CreateAura(m_spellInfo, i, &damage, unitTarget, caster, m_CastItem);
 
@@ -2261,10 +2194,6 @@ void Spell::EffectApplyAura(uint32 i)
             sLog.outDebug("Spell: Additional Aura is: %u", AdditionalSpellInfo->EffectApplyAuraName[0]);
         }
     }
-
-    // Prayer of Mending (jump animation), we need formal caster instead original for correct animation
-    if( m_spellInfo->SpellFamilyName == SPELLFAMILY_PRIEST && (m_spellInfo->SpellFamilyFlags & 0x00002000000000LL))
-        m_caster->CastSpell(unitTarget, 41637, true, NULL, Aur, m_originalCasterGUID);
 }
 
 void Spell::EffectUnlearnSpecialization( uint32 i )
@@ -2301,9 +2230,16 @@ void Spell::EffectPowerDrain(uint32 i)
     //add spell damage bonus
     damage=m_caster->SpellDamageBonus(unitTarget,m_spellInfo,uint32(damage),SPELL_DIRECT_DAMAGE);
 
-    unitTarget->ModifyPower(drain_power,-(int32)curPower);
+    int32 new_damage;
+    if (curPower < damage)
+        new_damage = curPower;
+    else
+        new_damage = damage;
 
-    if(drain_power == POWER_MANA)
+    unitTarget->ModifyPower(drain_power,-(int32)new_damage);
+
+    // Don`t restore from self drain
+    if(drain_power == POWER_MANA && m_caster != unitTarget)
     {
         float manaMultiplier = m_spellInfo->EffectMultipleValue[i];
         if(manaMultiplier==0)
@@ -2312,7 +2248,7 @@ void Spell::EffectPowerDrain(uint32 i)
         if(Player *modOwner = m_caster->GetSpellModOwner())
             modOwner->ApplySpellMod(m_spellInfo->Id, SPELLMOD_MULTIPLE_VALUE, manaMultiplier);
 
-        int32 gain = int32(curPower*manaMultiplier);
+        int32 gain = int32(new_damage*manaMultiplier);
 
         m_caster->ModifyPower(POWER_MANA,gain);
         //send log
