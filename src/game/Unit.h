@@ -1054,7 +1054,7 @@ class TRINITY_DLL_SPEC Unit : public WorldObject
 
         bool isInCombat()  const { return HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT); }
         void CombatStart(Unit* target);
-        void SetInCombatState(bool PvP);
+        void SetInCombatState(bool PvP, uint32 duration = 0);
         void SetInCombatWith(Unit* enemy);
         void ClearInCombat();
         uint32 GetCombatTimer() const { return m_CombatTimer; }

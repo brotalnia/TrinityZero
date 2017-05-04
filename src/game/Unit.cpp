@@ -9314,7 +9314,7 @@ void Unit::CombatStart(Unit* target)
 
 }
 
-void Unit::SetInCombatState(bool PvP)
+void Unit::SetInCombatState(bool PvP, uint32 duration)
 {
     // only alive units can be in combat
     if(!isAlive())
@@ -9322,9 +9322,10 @@ void Unit::SetInCombatState(bool PvP)
 
     if(PvP)
         m_CombatTimer = 5000;
+    else if (duration > 0)
+        m_CombatTimer = duration;
 
-    if(isInCombat())
-        return;
+    bool wasInCombat = isInCombat();
 
     SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_IN_COMBAT);
 
@@ -9335,11 +9336,22 @@ void Unit::SetInCombatState(bool PvP)
     {
         UpdateSpeed(MOVE_RUN, true);
         UpdateSpeed(MOVE_SWIM, true);
+        SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PET_IN_COMBAT);
     }
     else if(!isCharmed())
         return;
 
-    SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PET_IN_COMBAT);
+    // set pet in combat
+    if (Pet* pet = GetPet())
+        pet->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PET_IN_COMBAT);
+
+    // interrupt all delayed non-combat casts
+    if (!wasInCombat)
+        for (uint32 i = CURRENT_FIRST_NON_MELEE_SPELL; i < CURRENT_MAX_SPELL; ++i)
+            if (Spell* spell = this->m_currentSpells[CurrentSpellTypes(i)])
+                if (spell->getState() == SPELL_STATE_PREPARING && spell->GetCastedTime())
+                    if (IsNonCombatSpell(spell->m_spellInfo))
+                        InterruptSpell(CurrentSpellTypes(i), false);
 }
 
 void Unit::ClearInCombat()
