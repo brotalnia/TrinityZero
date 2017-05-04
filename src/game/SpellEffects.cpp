@@ -3892,7 +3892,7 @@ void Spell::EffectEnchantItemTmp(uint32 i)
         duration = 1800;                                    // 30 mins (Ustaag <Nostalrius> : Oil)
     // default case
     else
-        duration = 3600; 
+        duration = 3600;                                    // 1 hour
 
     // Calcul du nombre de charges
     // Poisons :
@@ -3952,10 +3952,11 @@ void Spell::EffectTameCreature(uint32 /*i*/)
     Pet* pet = m_caster->CreateTamedPetFrom(creatureTarget,m_spellInfo->Id);
     if(!pet) return;
 
+    // Nostalrius: defensive as default behaviour
+    pet->SetReactState(REACT_DEFENSIVE);
+
     // kill original creature
-    creatureTarget->setDeathState(JUST_DIED);
-    creatureTarget->RemoveCorpse();
-    creatureTarget->SetHealth(0);                       // just for nice GM-mode view
+    creatureTarget->ForcedDespawn();
 
     // prepare visual effect for levelup
     pet->SetUInt32Value(UNIT_FIELD_LEVEL,creatureTarget->getLevel()-1);
@@ -4041,6 +4042,8 @@ void Spell::EffectSummonPet(uint32 i)
         else
             pet->SetReactState(REACT_DEFENSIVE);
     }
+    else
+        pet->SetReactState(REACT_DEFENSIVE);
 
     pet->SetUInt32Value(UNIT_CREATED_BY_SPELL, m_spellInfo->Id);
 
