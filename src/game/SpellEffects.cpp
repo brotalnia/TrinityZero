@@ -4141,86 +4141,6 @@ void Spell::SpellDamageWeaponDmg(uint32 i)
 
     switch(m_spellInfo->SpellFamilyName)
     {
-        case SPELLFAMILY_WARRIOR:
-        {
-            // Devastate bonus and sunder armor refresh
-            if(m_spellInfo->SpellVisual == 671 && m_spellInfo->SpellIconID == 1508)
-            {
-                uint32 stack = 0;
-
-                Unit::AuraList const& list = unitTarget->GetAurasByType(SPELL_AURA_MOD_RESISTANCE);
-                for(Unit::AuraList::const_iterator itr=list.begin();itr!=list.end();++itr)
-                {
-                    SpellEntry const *proto = (*itr)->GetSpellProto();
-                    if(proto->SpellFamilyName == SPELLFAMILY_WARRIOR
-                        && proto->SpellFamilyFlags == SPELLFAMILYFLAG_WARRIOR_SUNDERARMOR)
-                    {
-                        int32 duration = GetSpellDuration(proto);
-                        (*itr)->SetAuraDuration(duration);
-                        (*itr)->UpdateAuraDuration();
-                        stack = (*itr)->GetStackAmount();
-                        break;
-                    }
-                }
-
-                for(int j = 0; j < 3; j++)
-                {
-                    if(m_spellInfo->Effect[j] == SPELL_EFFECT_NORMALIZED_WEAPON_DMG)
-                    {
-                        fixed_bonus += (stack - 1) * CalculateDamage(j, unitTarget);
-                        break;
-                    }
-                }
-
-                if(stack < 5)
-                {
-                    // get highest rank of the Sunder Armor spell
-                    const PlayerSpellMap& sp_list = ((Player*)m_caster)->GetSpellMap();
-                    for (PlayerSpellMap::const_iterator itr = sp_list.begin(); itr != sp_list.end(); ++itr)
-                    {
-                        // only highest rank is shown in spell book, so simply check if shown in spell book
-                        if(!itr->second->active || itr->second->disabled || itr->second->state == PLAYERSPELL_REMOVED)
-                            continue;
-
-                        SpellEntry const *spellInfo = sSpellStore.LookupEntry(itr->first);
-                        if (!spellInfo)
-                            continue;
-
-                        if (spellInfo->SpellFamilyFlags == SPELLFAMILYFLAG_WARRIOR_SUNDERARMOR
-                            && spellInfo->Id != m_spellInfo->Id
-                            && spellInfo->SpellFamilyName == SPELLFAMILY_WARRIOR)
-                        {
-                            m_caster->CastSpell(unitTarget, spellInfo, true);
-                            break;
-                        }
-                    }
-                }
-            }
-            break;
-        }
-        case SPELLFAMILY_ROGUE:
-        {
-            // Hemorrhage
-            if(m_spellInfo->SpellFamilyFlags & 0x2000000)
-            {
-                if(m_caster->GetTypeId()==TYPEID_PLAYER)
-                    ((Player*)m_caster)->AddComboPoints(unitTarget, 1);
-            }
-            // Mutilate (for each hand)
-            else if(m_spellInfo->SpellFamilyFlags & 0x600000000LL)
-            {
-                Unit::AuraMap const& auras = unitTarget->GetAuras();
-                for(Unit::AuraMap::const_iterator itr = auras.begin(); itr!=auras.end(); ++itr)
-                {
-                    if(itr->second->GetSpellProto()->Dispel == DISPEL_POISON)
-                    {
-                        totalDamagePercentMod *= 1.5f;          // 150% if poisoned
-                        break;
-                    }
-                }
-            }
-            break;
-        }
         case SPELLFAMILY_PALADIN:
         {
             // Seal of Command - receive benefit from Spell Damage and Healing
@@ -4228,35 +4148,6 @@ void Spell::SpellDamageWeaponDmg(uint32 i)
             {
                 spell_bonus += int32(0.20f*m_caster->SpellBaseDamageBonus(GetSpellSchoolMask(m_spellInfo)));
                 spell_bonus += int32(0.29f*m_caster->SpellBaseDamageBonusForVictim(GetSpellSchoolMask(m_spellInfo), unitTarget));
-            }
-            break;
-        }
-        case SPELLFAMILY_SHAMAN:
-        {
-            // Skyshatter Harness item set bonus
-            // Stormstrike
-            if(m_spellInfo->SpellFamilyFlags & 0x001000000000LL)
-            {
-                Unit::AuraList const& m_OverrideClassScript = m_caster->GetAurasByType(SPELL_AURA_OVERRIDE_CLASS_SCRIPTS);
-                for(Unit::AuraList::const_iterator i = m_OverrideClassScript.begin(); i != m_OverrideClassScript.end(); ++i)
-                {
-                    // Stormstrike AP Buff
-                    if ( (*i)->GetModifier()->m_miscvalue == 5634 )
-                    {
-                        m_caster->CastSpell(m_caster,38430,true,NULL,*i);
-                        break;
-                    }
-                }
-            }
-            break;
-        }
-        case SPELLFAMILY_DRUID:
-        {
-            // Mangle (Cat): CP
-            if(m_spellInfo->SpellFamilyFlags==0x0000040000000000LL)
-            {
-                if(m_caster->GetTypeId()==TYPEID_PLAYER)
-                    ((Player*)m_caster)->AddComboPoints(unitTarget,1);
             }
             break;
         }
@@ -4404,6 +4295,10 @@ void Spell::EffectInterruptCast(uint32 i)
     {
         if (unitTarget->m_currentSpells[i])
         {
+            // Nostalrius: fix CS of instant spells (with CC Delay)
+            if (i != CURRENT_CHANNELED_SPELL && !unitTarget->m_currentSpells[i]->GetCastTime())
+                continue;
+
             // check if we can interrupt spell
             if ( (unitTarget->m_currentSpells[i]->getState() == SPELL_STATE_CASTING || (unitTarget->m_currentSpells[i]->getState() == SPELL_STATE_PREPARING && unitTarget->m_currentSpells[i]->GetCastTime() > 0.0f)) && unitTarget->m_currentSpells[i]->m_spellInfo->InterruptFlags & SPELL_INTERRUPT_FLAG_INTERRUPT && unitTarget->m_currentSpells[i]->m_spellInfo->PreventionType == SPELL_PREVENTION_TYPE_SILENCE )
             {
