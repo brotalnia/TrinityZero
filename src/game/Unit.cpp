@@ -2307,13 +2307,13 @@ void Unit::DoAttackDamage (Unit *pVictim, uint32 *damage, CleanDamage *cleanDama
     }
 }*/
 
-void Unit::AttackerStateUpdate (Unit *pVictim, WeaponAttackType attType, bool extra )
+bool Unit::AttackerStateUpdate (Unit *pVictim, WeaponAttackType attType, bool extra )
 {
     if(hasUnitState(UNIT_STAT_CANNOT_AUTOATTACK) || HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PACIFIED) )
-        return;
+        return false;
 
     if (!pVictim->isAlive())
-        return;
+        return false;
 
     CombatStart(pVictim);
     RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_ATTACK);
@@ -2324,7 +2324,7 @@ void Unit::AttackerStateUpdate (Unit *pVictim, WeaponAttackType attType, bool ex
     else if (attType == OFF_ATTACK)
         hitInfo = HITINFO_LEFTSWING;
     else
-        return;                                             // ignore ranged case
+        return false;                                             // ignore ranged case
 
     uint32 extraAttacks = m_extraAttacks;
 
@@ -2344,7 +2344,7 @@ void Unit::AttackerStateUpdate (Unit *pVictim, WeaponAttackType attType, bool ex
             }
         }
 
-        return;
+        return true;
     }
 
     CalcDamageInfo damageInfo;
@@ -2371,6 +2371,8 @@ void Unit::AttackerStateUpdate (Unit *pVictim, WeaponAttackType attType, bool ex
                 --m_extraAttacks;
         }
     }
+
+    return true;
 }
 
 /*

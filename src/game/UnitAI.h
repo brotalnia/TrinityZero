@@ -75,7 +75,7 @@ class TRINITY_DLL_SPEC UnitAI
 
         float DoGetSpellMaxRange(uint32 spellId, bool positive = false);
 
-        void DoMeleeAttackIfReady();
+        bool DoMeleeAttackIfReady();
         bool DoSpellAttackIfReady(uint32 spell);
 
         static AISpellInfoType *AISpellInfo;

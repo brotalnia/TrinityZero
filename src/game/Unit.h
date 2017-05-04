@@ -993,7 +993,7 @@ class TRINITY_DLL_SPEC Unit : public WorldObject
         void ProcDamageAndSpellFor( bool isVictim, Unit * pTarget, uint32 procFlag, uint32 procExtra, WeaponAttackType attType, SpellEntry const * procSpell, uint32 damage );
 
         void HandleEmoteCommand(uint32 anim_id);
-        void AttackerStateUpdate (Unit *pVictim, WeaponAttackType attType = BASE_ATTACK, bool extra = false );
+        bool AttackerStateUpdate (Unit *pVictim, WeaponAttackType attType = BASE_ATTACK, bool extra = false );
 
         //float MeleeMissChanceCalc(const Unit *pVictim, WeaponAttackType attType) const;
 

@@ -37,18 +37,19 @@ void UnitAI::AttackStartCaster(Unit *victim, float dist)
         me->GetMotionMaster()->MoveChase(victim, dist);
 }
 
-void UnitAI::DoMeleeAttackIfReady()
+bool UnitAI::DoMeleeAttackIfReady()
 {
     if(me->hasUnitState(UNIT_STAT_CASTING))
-        return;
+        return false;
 
+    bool success = false;
     //Make sure our attack is ready and we aren't currently casting before checking distance
     if (me->isAttackReady())
     {
         //If we are within range melee the target
         if (me->IsWithinMeleeRange(me->getVictim()))
         {
-            me->AttackerStateUpdate(me->getVictim());
+            success = me->AttackerStateUpdate(me->getVictim());
             me->resetAttackTimer();
         }
     }
@@ -57,10 +58,11 @@ void UnitAI::DoMeleeAttackIfReady()
         //If we are within range melee the target
         if (me->IsWithinMeleeRange(me->getVictim()))
         {
-            me->AttackerStateUpdate(me->getVictim(), OFF_ATTACK);
+            success = me->AttackerStateUpdate(me->getVictim(), OFF_ATTACK) || success;
             me->resetAttackTimer(OFF_ATTACK);
         }
     }
+    return success;
 }
 
 bool UnitAI::DoSpellAttackIfReady(uint32 spell)
