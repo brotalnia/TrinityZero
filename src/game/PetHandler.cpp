@@ -87,16 +87,27 @@ void WorldSession::HandlePetAction( WorldPacket & recv_data )
             switch(spellid)
             {
                 case COMMAND_STAY:                          //flat=1792  //STAY
-                    pet->AttackStop();
-                    pet->InterruptNonMeleeSpells(false);
+                    pet->StopMoving();
+                    pet->GetMotionMaster()->Clear(false);
                     pet->GetMotionMaster()->MoveIdle();
-                    charmInfo->SetCommandState( COMMAND_STAY );
+                    charmInfo->SetCommandState(COMMAND_STAY);
+
+                    charmInfo->SetIsCommandAttack(false);
+                    charmInfo->SetIsAtStay(true);
+                    charmInfo->SetIsFollowing(false);
+                    charmInfo->SetIsReturning(false);
+                    charmInfo->SaveStayPosition();
                     break;
                 case COMMAND_FOLLOW:                        //spellid=1792  //FOLLOW
                     pet->AttackStop();
                     pet->InterruptNonMeleeSpells(false);
                     pet->GetMotionMaster()->MoveFollow(_player,PET_FOLLOW_DIST,PET_FOLLOW_ANGLE);
                     charmInfo->SetCommandState( COMMAND_FOLLOW );
+
+                    charmInfo->SetIsCommandAttack(false);
+                    charmInfo->SetIsAtStay(false);
+                    charmInfo->SetIsReturning(true);
+                    charmInfo->SetIsFollowing(false);
                     break;
                 case COMMAND_ATTACK:                        //spellid=1792  //ATTACK
                 {
