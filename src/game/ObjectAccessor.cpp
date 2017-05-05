@@ -235,6 +235,19 @@ ObjectAccessor::FindPlayer(uint64 guid)
 }
 
 Player*
+ObjectAccessor::FindPlayerNotInWorld(uint64 guid)
+{
+    if (!guid)
+        return NULL;
+
+    Player * plr = HashMapHolder<Player>::Find(guid);;
+    if (!plr || !plr->IsInWorld())
+        return NULL;
+
+    return plr;
+}
+
+Player*
 ObjectAccessor::FindPlayerByName(const char *name)
 {
     //TODO: Player Guard

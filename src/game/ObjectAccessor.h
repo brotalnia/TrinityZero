@@ -153,6 +153,7 @@ class TRINITY_DLL_DECL ObjectAccessor : public Trinity::Singleton<ObjectAccessor
         static Corpse* GetCorpse(WorldObject const &u, uint64 guid);
         static Pet* GetPet(uint64 guid);
         static Player* FindPlayer(uint64);
+        static Player* FindPlayerNotInWorld(uint64 guid);
 
         Player* FindPlayerByName(const char *name) ;
 

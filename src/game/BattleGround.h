@@ -134,9 +134,9 @@ struct BattleGroundObjectInfo
 
 enum BattleGroundTypeId
 {
-    BATTLEGROUND_AV     = 1,
-    BATTLEGROUND_WS     = 2,
-    BATTLEGROUND_AB     = 3,
+    BATTLEGROUND_AV             = 1,
+    BATTLEGROUND_WS             = 2,
+    BATTLEGROUND_AB             = 3,
 };
 
 // handle the queue types and bg types separately to enable joining queue for different sized arenas at the same time
@@ -146,6 +146,20 @@ enum BattleGroundQueueTypeId
     BATTLEGROUND_QUEUE_WS     = 2,
     BATTLEGROUND_QUEUE_AB     = 3,
 };
+
+inline uint32 GetBattleGrounMapIdByTypeId(uint32 bgTypeId)
+{
+    switch(bgTypeId)
+    {
+        case BATTLEGROUND_AV:   return 30;
+        case BATTLEGROUND_WS:   return 489;
+        case BATTLEGROUND_AB:   return 529;
+        default:                return 0;   //none
+    }
+
+    // impossible, just make compiler happy
+    return 0;
+}
 
 enum ScoreType
 {

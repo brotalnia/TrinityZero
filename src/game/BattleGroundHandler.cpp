@@ -88,6 +88,7 @@ void WorldSession::HandleBattleGroundJoinOpcode( WorldPacket & recv_data )
 
     sLog.outError("BATTLEGROUND OPCODE "I64FMT" %u %u", guid, bgTypeId, instanceId);
 
+    bgTypeId = sBattleGroundMgr.GetBGTypeIdByMap(bgTypeId);
     if(!bgTypeId || bgTypeId > MAX_BATTLEGROUND_TYPES)
     {
         sLog.outError("Battleground: invalid bgtype received. possible cheater? player guid %u",_player->GetGUIDLow());

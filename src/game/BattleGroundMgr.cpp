@@ -729,34 +729,30 @@ void BattleGroundMgr::BuildBattleGroundStatusPacket(WorldPacket *data, BattleGro
     // we can be in 3 queues in same time...
     if(StatusID == 0)
     {
-        data->Initialize(SMSG_BATTLEFIELD_STATUS, 4 + 4);
+        data->Initialize(SMSG_BATTLEFIELD_STATUS, 4 * 2);
         *data << uint32(QueueSlot);                         // queue id (0...2)
         *data << uint32(0);
         return;
     }
 
-    data->Initialize(SMSG_BATTLEFIELD_STATUS, 6*4 + 1); //Wrong datapacket size...
+    data->Initialize(SMSG_BATTLEFIELD_STATUS, (4 + 1 + 1 + 4 + 2 + 4 + 1 + 4 + 4 + 4));
     *data << uint32(QueueSlot);                               // Unknown 1
     *data << uint32(bg->GetMapId());                          // MapID
     *data << uint8(0);                                        // Unknown
     *data << uint32(bg->GetInstanceID());                     // Instance ID
-    *data << uint32(StatusID);                                // Status ID
-    switch(StatusID)
+    *data << uint32(StatusID);                              // status
+    switch (StatusID)
     {
-        //[TZERO]case STATUS_IN_PROGRESS:
         case STATUS_WAIT_QUEUE:                             // status_in_queue
             *data << uint32(Time1);                         // average wait time, milliseconds
-            *data << uint32(Time2);                         // time in queue, updated every minute?
+            *data << uint32(Time2);                         // time in queue, updated every minute!, milliseconds
             break;
         case STATUS_WAIT_JOIN:                              // status_invite
-            *data << uint32(bg->GetMapId());                // map id
             *data << uint32(Time1);                         // time to remove from queue, milliseconds
             break;
-           case STATUS_IN_PROGRESS:                            // status_in_progress
-            *data << uint32(bg->GetMapId());                // map id
-            *data << uint32(Time1);                         // 0 at bg start, 120000 after bg end, time to bg auto leave, milliseconds
+        case STATUS_IN_PROGRESS:                            // status_in_progress
+            *data << uint32(Time1);                         // time to bg auto leave, 0 at bg start, 120000 after bg end, milliseconds
             *data << uint32(Time2);                         // time from bg start, milliseconds
-            *data << uint8(0x1);                            // unk sometimes 0x0!
             break;
         default:
             sLog.outError("Unknown BG status!");
@@ -766,12 +762,11 @@ void BattleGroundMgr::BuildBattleGroundStatusPacket(WorldPacket *data, BattleGro
 
 void BattleGroundMgr::BuildPvpLogDataPacket(WorldPacket *data, BattleGround *bg)
 {
-    data->Initialize(MSG_PVP_LOG_DATA, (1+1+4+40*bg->GetPlayerScoresSize())); //Wrong Datapacket size
- //   *data << uint8(0);                                      // Don't use, because client crash, and only BG type, not arena... etc..
+    data->Initialize(MSG_PVP_LOG_DATA, (1 + 4 + 40 * bg->GetPlayerScoresSize()));
 
-    if(bg->GetWinner() == 2)
+    if (bg->GetStatus() != STATUS_WAIT_LEAVE)
     {
-        *data << uint8(0);                                  // bg in progress
+        *data << uint8(0);                                  // bg not ended
     }
     else
     {
@@ -779,31 +774,38 @@ void BattleGroundMgr::BuildPvpLogDataPacket(WorldPacket *data, BattleGround *bg)
         *data << uint8(bg->GetWinner());                    // who win
     }
 
-    *data << (int32)(bg->GetPlayerScoresSize());
+    uint32 count = bg->GetPlayerScoresSize();
+    if (count >= 80) // Client has a hard limit to 80. If we go beyond (but it should not happen ?!), WoW Error (happening !)
+        count = 80;
+    *data << (uint32)(count);
 
     for(std::map<uint64, BattleGroundScore*>::const_iterator itr = bg->GetPlayerScoresBegin(); itr != bg->GetPlayerScoresEnd(); ++itr)
     {
+        if (!count)
+            break;
+        --count;
+
         *data << (uint64)itr->first;
-        *data << (int32)itr->second->KillingBlows;
-        Player *plr = objmgr.GetPlayer(itr->first);
-        uint32 team = bg->GetPlayerTeam(itr->first);
-        if(!team && plr) team = plr->GetTeam();
 
-        *data << (int32)itr->second->HonorableKills;
-        *data << (int32)itr->second->Deaths;
-        *data << (int32)(itr->second->BonusHonor);
+        Player *plr = ObjectAccessor::FindPlayerNotInWorld(itr->first);
 
-    //    *data << (int32)itr->second->DamageDone;             // Don't use 1.12 Client
-    //    *data << (int32)itr->second->HealingDone;            // Don't use 1.12 Client
+        *data << uint32(plr ? plr->GetHonorRank() : 4);
+        *data << uint32(itr->second->KillingBlows);
+        *data << uint32(itr->second->HonorableKills);
+        *data << uint32(itr->second->Deaths);
+        *data << uint32(itr->second->BonusHonor);
+
         switch(bg->GetTypeID())                              // battleground specific things
         {
             case BATTLEGROUND_AV:
-                *data << (uint32)0x00000005;                // count of next fields
+                *data << (uint32)0x00000007;                // count of next fields
                 *data << (uint32)((BattleGroundAVScore*)itr->second)->GraveyardsAssaulted;  // GraveyardsAssaulted
                 *data << (uint32)((BattleGroundAVScore*)itr->second)->GraveyardsDefended;   // GraveyardsDefended
                 *data << (uint32)((BattleGroundAVScore*)itr->second)->TowersAssaulted;      // TowersAssaulted
                 *data << (uint32)((BattleGroundAVScore*)itr->second)->TowersDefended;       // TowersDefended
-                *data << (uint32)((BattleGroundAVScore*)itr->second)->MinesCaptured;        // MinesCaptured
+                *data << (uint32)((BattleGroundAVScore*)itr->second)->SecondaryObjectives;  // Mines Taken
+                *data << (uint32)((BattleGroundAVScore*)itr->second)->LieutnantCount;       // Lieutnant kills
+                *data << (uint32)((BattleGroundAVScore*)itr->second)->SecondaryNPC;         // Secondary unit summons
                 break;
             case BATTLEGROUND_WS:
                 *data << (uint32)0x00000002;                // count of next fields
@@ -829,11 +831,7 @@ void BattleGroundMgr::BuildGroupJoinedBattlegroundPacket(WorldPacket *data, uint
     0 - Your group has joined a battleground queue, but you are not eligible
     1 - Your group has joined the queue for AV
     2 - Your group has joined the queue for WS
-    3 - Your group has joined the queue for AB
-    4 - Your group has joined the queue for NA
-    5 - Your group has joined the queue for BE Arena
-    6 - Your group has joined the queue for All Arenas
-    7 - Your group has joined the queue for EotS*/
+    3 - Your group has joined the queue for AB*/
     data->Initialize(SMSG_GROUP_JOINED_BATTLEGROUND, 4);
     *data << uint32(bgTypeId);
 }
@@ -1094,24 +1092,35 @@ void BattleGroundMgr::BuildBattleGroundListPacket(WorldPacket *data, uint64 guid
     if(plr)
         PlayerLevel = plr->getLevel();
 
+    uint32 mapId = GetBattleGrounMapIdByTypeId(bgTypeId);
+
     data->Initialize(SMSG_BATTLEFIELD_LIST);
-    *data << uint64(guid);                              // battlemaster guid
-    *data << uint32(bgTypeId);                          // battleground id
-    *data << uint8(0x00);                               // unk
+    *data << uint64(guid);                          // battlemaster guid
+    *data << uint32(mapId);                         // battleground id
+    *data << uint8(0x00);                           // unk
 
     size_t count_pos = data->wpos();
     uint32 count = 0;
-    *data << uint32(0x00);                              // number of bg instances
+    *data << uint32(0);                             // number of bg instances
 
-    for(std::map<uint32, BattleGround*>::iterator itr = m_BattleGrounds.begin(); itr != m_BattleGrounds.end(); ++itr)
+    // battleground
     {
-        if(itr->second->GetTypeID() == bgTypeId && (PlayerLevel >= itr->second->GetMinLevel()) && (PlayerLevel <= itr->second->GetMaxLevel()))
+        *data << uint8(0x00);                               // unk
+
+        size_t count_pos = data->wpos();
+        uint32 count = 0;
+        *data << uint32(0);                                 // number of bg instances
+
+        for(std::map<uint32, BattleGround*>::iterator itr = m_BattleGrounds.begin(); itr != m_BattleGrounds.end(); ++itr)
         {
-            *data << uint32(itr->second->GetInstanceID());
-            ++count;
+            if(itr->second->GetTypeID() == bgTypeId && (PlayerLevel >= itr->second->GetMinLevel()) && (PlayerLevel <= itr->second->GetMaxLevel()))
+            {
+                *data << uint32(itr->second->GetInstanceID());
+                ++count;
+            }
         }
+        data->put<uint32>( count_pos , count);
     }
-    data->put<uint32>( count_pos , count);
 }
 
 void BattleGroundMgr::SendToBattleGround(Player *pl, uint32 instanceId)
