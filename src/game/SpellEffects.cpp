@@ -5485,6 +5485,13 @@ void Spell::EffectAddExtraAttacks(uint32 /*i*/)
     if(!unitTarget || !unitTarget->isAlive())
         return;
 
+    if (m_spellInfo->Id == 20178) // Reckoning
+    {
+        if (unitTarget->m_extraAttacks < 4)
+            unitTarget->m_extraAttacks++;
+        return;
+    }
+
     if( unitTarget->m_extraAttacks )
         return;
 
@@ -5916,6 +5923,8 @@ void Spell::EffectSummonDeadPet(uint32 /*i*/)
         return;
     if(damage < 0)
         return;
+    // Chakor : Teleport the pet to the player's location
+    pet->NearTeleportTo(_player->GetPositionX(), _player->GetPositionY(), _player->GetPositionZ(), _player->GetOrientation(), false);
     pet->SetUInt32Value(UNIT_DYNAMIC_FLAGS, 0);
     pet->RemoveFlag (UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
     pet->setDeathState( ALIVE );
@@ -5923,6 +5932,13 @@ void Spell::EffectSummonDeadPet(uint32 /*i*/)
     pet->SetHealth( uint32(pet->GetMaxHealth()*(float(damage)/100)));
 
     pet->AIM_Initialize();
+    pet->GetMotionMaster()->MoveFollow(_player,PET_FOLLOW_DIST,PET_FOLLOW_ANGLE);
+    pet->GetCharmInfo()->SetCommandState( COMMAND_FOLLOW );
+
+    pet->GetCharmInfo()->SetIsCommandAttack(false);
+    pet->GetCharmInfo()->SetIsAtStay(false);
+    pet->GetCharmInfo()->SetIsReturning(true);
+    pet->GetCharmInfo()->SetIsFollowing(false);
 
     _player->PetSpellInitialize();
     pet->SavePetToDB(PET_SAVE_AS_CURRENT);
