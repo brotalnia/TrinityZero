@@ -2786,6 +2786,10 @@ void Spell::SendCastResult(SpellCastResult result)
                     case 23539:
                         data << uint32(2597);
                         break;
+                    case 23333:
+                    case 23335:
+                        data << uint32(3277);
+                        break;
                 }
                 break;
             case SPELL_FAILED_EQUIPPED_ITEM_CLASS:
