@@ -4464,7 +4464,7 @@ void Spell::EffectScriptEffect(uint32 effIndex)
                 { 5511,19006,19007},                        // Lesser Healthstone
                 { 5509,19008,19009},                        // Healthstone
                 { 5510,19010,19011},                        // Greater Healthstone
-                { 9421,19012,19013}                        // Major Healthstone
+                { 9421,19012,19013}                         // Major Healthstone
             };
 
             switch(m_spellInfo->Id)
@@ -4759,9 +4759,9 @@ void Spell::EffectScriptEffect(uint32 effIndex)
             if (!unitTarget || unitTarget->GetTypeId() != TYPEID_PLAYER)
                 return;
 
-            uint32 spells[3] = {26206, 26207, 45036};
+            uint32 spells[2] = {26206, 26207};
 
-            m_caster->CastSpell(unitTarget, spells[urand(0, 2)], true);
+            m_caster->CastSpell(unitTarget, spells[urand(0, 1)], true);
             return;
         }
 
