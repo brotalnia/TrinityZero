@@ -2771,11 +2771,22 @@ void Spell::SendCastResult(SpellCastResult result)
     if(result != SPELL_CAST_OK)
     {
         data << uint8(2); // status = fail
-        data << uint8(result);                              // problem
+        data << uint8(IsPassiveSpell(m_spellInfo->Id) ? SPELL_FAILED_DONT_REPORT : result);
         switch (result)
         {
             case SPELL_FAILED_REQUIRES_SPELL_FOCUS:
                 data << uint32(m_spellInfo->RequiresSpellFocus);
+                break;
+            case SPELL_FAILED_REQUIRES_AREA:
+                switch (m_spellInfo->Id)
+                {
+                    case 22564:
+                    case 22563:
+                    case 23538:
+                    case 23539:
+                        data << uint32(2597);
+                        break;
+                }
                 break;
             case SPELL_FAILED_EQUIPPED_ITEM_CLASS:
                 data << uint32(m_spellInfo->EquippedItemClass);

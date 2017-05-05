@@ -2697,45 +2697,30 @@ bool IsSpellAllowedInLocation(SpellEntry const *spellInfo,uint32 map_id,uint32 z
 //    if( spellInfo->AreaId && spellInfo->AreaId != zone_id && spellInfo->AreaId != area_id )
 //        return false;
 
-    // elixirs (all area dependent elixirs have family SPELLFAMILY_POTION, use this for speedup)
-    if(spellInfo->SpellFamilyName==SPELLFAMILY_POTION)
+    switch (spellInfo->Id)
     {
-        if(uint32 mask = spellmgr.GetSpellElixirMask(spellInfo->Id))
+        // Alterac Valley
+        case 22564:                                         // recall
+        case 22563:                                         // recall
+        case 23538:                                         // Battle Standard
+        case 23539:
         {
-            if(mask & ELIXIR_BATTLE_MASK)
-            {
-                if(spellInfo->Id==45373)                    // Bloodberry Elixir
-                    return zone_id==4075;
-            }
-            // elixirs not have another limitations
-            return true;
+            return map_id == 30;
         }
-    }
-
-    // special cases zone check (maps checked by multimap common id)
-    switch(spellInfo->Id)
-    {
-        case 41618:                                         // Bottled Nethergon Energy
-        case 41620:                                         // Bottled Nethergon Vapor
+        case 23333:                                         // Warsong Flag
+        case 23335:                                         // Silverwing Flag
+        {
+            return map_id == 489;
+        }
+        case 22011:                                         // Spirit Heal Channel
+        case 22012:                                         // Spirit Heal
+        case 24171:                                         // Resurrection Impact Visual
         {
             MapEntry const* mapEntry = sMapStore.LookupEntry(map_id);
-            if(!mapEntry)
+            if (!mapEntry)
                 return false;
-
-            return mapEntry->multimap_id==206;
+            return mapEntry->IsBattleGround();
         }
-        case 41617:                                         // Cenarion Mana Salve
-        case 41619:                                         // Cenarion Healing Salve
-        {
-            MapEntry const* mapEntry = sMapStore.LookupEntry(map_id);
-            if(!mapEntry)
-                return false;
-
-            return mapEntry->multimap_id==207;
-        }
-        case 40216:                                         // Dragonmaw Illusion
-        case 42016:                                         // Dragonmaw Illusion
-            return area_id == 3759 || area_id == 3966 || area_id == 3939;
     }
 
     return true;
