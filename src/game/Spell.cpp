@@ -648,8 +648,24 @@ void Spell::prepareDataForTriggerSystem()
             case SPELLFAMILY_HUNTER:  // Hunter Explosive Trap Effect/Immolation Trap Effect/Frost Trap Aura/Snake Trap Effect
                 if (m_spellInfo->SpellFamilyFlags & 0x0000200000000014LL) m_canTrigger = true;
             break;
-            case SPELLFAMILY_PALADIN: // For Holy Shock triggers need do it
-                if (m_spellInfo->SpellFamilyFlags & 0x0001000000200000LL) m_canTrigger = true;
+            case SPELLFAMILY_PALADIN:
+                // Seal of Command (example Vengeance proc) | SPELLFAMILY_PALADIN override
+                if (m_spellInfo->Id == 20424)
+                    m_canTrigger = true;
+                // Seal of Righteousness
+                else if (!m_spellInfo->SpellFamilyFlags && m_spellInfo->SpellIconID == 25)
+                    m_canTrigger = true;
+                // For Holy Shock triggers need do it
+                else if (m_spellInfo->SpellFamilyFlags & 0x0001000000200000LL)
+                    m_canTrigger = true;
+                // Eye for an Eye triggered spell
+                else if (m_spellInfo->Id == 25997)
+                    m_canTrigger = true;
+            break;
+            case SPELLFAMILY_PRIEST:
+                // Touch of Weakness / Devouring Plague
+                if ((m_spellInfo->SpellFamilyFlags & 0x2000000LL) || (m_spellInfo->SpellFamilyFlags & 0x0080000LL))
+                    m_canTrigger = true;
             break;
         }
     }
