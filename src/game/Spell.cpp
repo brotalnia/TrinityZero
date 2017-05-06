@@ -1083,7 +1083,7 @@ void Spell::DoAllEffectOnTarget(TargetInfo *target)
             m_caster->CastCustomSpell(m_caster, 32220, &damagePoint, NULL, NULL, true);
         }
         // Bloodthirst                                                                            
-        else if (m_spellInfo->SpellFamilyName == SPELLFAMILY_WARRIOR && m_spellInfo->SpellFamilyFlags & 0x2000000LL)
+        else if ((m_spellInfo->SpellFamilyName == SPELLFAMILY_WARRIOR) && (m_spellInfo->SpellFamilyFlags & 0x2000000LL) && (m_spellInfo->Id!=21553))
         {
             uint32 BTAura = 0;
             switch(m_spellInfo->Id)
