@@ -2168,7 +2168,28 @@ void Spell::prepare(SpellCastTargets * targets, Aura* triggeredByAura)
         // stealth must be removed at cast starting (at show channel bar)
         // skip triggered spell (item equip spell casting and other not explicit character casts/item uses)
         if(isSpellBreakStealth(m_spellInfo) )
-            m_caster->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_CAST);
+        {
+            bool doUnaura = true;
+
+            if (m_caster->HasAuraType(SPELL_AURA_MOD_STEALTH) && (m_caster->GetTypeId() == TYPEID_PLAYER) && (m_spellInfo->SpellIconID == 249))  // Sap
+            {
+                // Improved Sap
+                if (m_caster->HasAura(14076,0))  // Rank 1
+                    doUnaura = (urand(0, 99) > 30);
+                else if (m_caster->HasAura(14094,0))  // Rank 2
+                    doUnaura = (urand(0, 99) > 60);
+                else if (m_caster->HasAura(14095,0))  // Rank 3
+                    doUnaura = (urand(0, 99) > 90);
+            }
+
+            if (doUnaura)
+                m_caster->RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_CAST);
+            else
+            {
+                cast(true);
+                return;
+            }
+        }
 
         m_caster->SetCurrentCastedSpell( this );
         m_selfContainer = &(m_caster->m_currentSpells[GetCurrentContainer()]);

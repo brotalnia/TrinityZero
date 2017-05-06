@@ -134,9 +134,9 @@ struct BattleGroundObjectInfo
 
 enum BattleGroundTypeId
 {
-    BATTLEGROUND_AV             = 1,
-    BATTLEGROUND_WS             = 2,
-    BATTLEGROUND_AB             = 3,
+    BATTLEGROUND_AV     = 1,
+    BATTLEGROUND_WS     = 2,
+    BATTLEGROUND_AB     = 3,
 };
 
 // handle the queue types and bg types separately to enable joining queue for different sized arenas at the same time

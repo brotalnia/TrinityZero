@@ -740,7 +740,7 @@ void BattleGroundMgr::BuildBattleGroundStatusPacket(WorldPacket *data, BattleGro
     *data << uint32(bg->GetMapId());                          // MapID
     *data << uint8(0);                                        // Unknown
     *data << uint32(bg->GetInstanceID());                     // Instance ID
-    *data << uint32(StatusID);                              // status
+    *data << uint32(StatusID);                                // Status ID
     switch (StatusID)
     {
         case STATUS_WAIT_QUEUE:                             // status_in_queue
