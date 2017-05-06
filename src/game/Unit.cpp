@@ -4984,7 +4984,6 @@ bool Unit::HandleDummyAuraProc(Unit *pVictim, uint32 damage, Aura* triggeredByAu
                 case 12292:
                 case 18765:
                 {
-                    printf("swp\n");
                     // Prevent chain of triggered spell from same triggered spell
                     if (procSpell && procSpell->Id == 26654)
                         return false;
@@ -6254,13 +6253,6 @@ bool Unit::HandleProcTriggerSpell(Unit *pVictim, uint32 damage, Aura* triggeredB
 //          trigger_spell_id = ;
 //     else if (auraSpellInfo->Id==37030) // Chaotic Temperament
 //          trigger_spell_id = ;
-     else if (auraSpellInfo->Id==43820)   // Charm of the Witch Doctor (Amani Charm of the Witch Doctor trinket)
-     {
-          // Pct value stored in dummy
-          basepoints0 = pVictim->GetCreateHealth() * auraSpellInfo->EffectBasePoints[1] / 100;
-          target = pVictim;
-          break;
-     }
 //     else if (auraSpellInfo->Id==41248) // Consuming Strikes
 //          trigger_spell_id = 41249;
 //     else if (auraSpellInfo->Id==41054) // Copy Weapon
@@ -6484,7 +6476,6 @@ bool Unit::HandleProcTriggerSpell(Unit *pVictim, uint32 damage, Aura* triggeredB
                  case 19310: trigger_spell_id = 28380; break;   // Rank 4
                  case 19311: trigger_spell_id = 28381; break;   // Rank 5
                  case 19312: trigger_spell_id = 28382; break;   // Rank 6
-                 case 25477: trigger_spell_id = 28385; break;   // Rank 7
                  default:
                      sLog.outError("Unit::HandleProcTriggerSpell: Spell %u not handled in SG", auraSpellInfo->Id);
                  return false;
@@ -6515,41 +6506,22 @@ bool Unit::HandleProcTriggerSpell(Unit *pVictim, uint32 damage, Aura* triggeredB
      // Leader of the Pack   trigger = 18350
      //=====================================================================
      case SPELLFAMILY_DRUID:
-     {
-         // Druid Forms Trinket
-         if (auraSpellInfo->Id==37336)
-         {
-             switch(m_form)
-             {
-                 case 0:              trigger_spell_id = 37344;break;
-                 case FORM_CAT:       trigger_spell_id = 37341;break;
-                 case FORM_BEAR:
-                 case FORM_DIREBEAR:  trigger_spell_id = 37340;break;
-                 case FORM_TREE:      trigger_spell_id = 37342;break;
-                 case FORM_MOONKIN:   trigger_spell_id = 37343;break;
-                 default:
-                     return false;
-             }
-         }
-//         else if (auraSpellInfo->Id==40363)// Entangling Roots ()
-//             trigger_spell_id = ????;
-         // Leader of the Pack
-         else if (auraSpellInfo->Id == 24932)
-         {
-             if (triggerAmount == 0)
-                 return false;
-             basepoints0 = triggerAmount * GetMaxHealth() / 100;
-             trigger_spell_id = 34299;
-         }
          break;
-     }
      //=====================================================================
      // Hunter
      // ====================================================================
      // ......
      //=====================================================================
      case SPELLFAMILY_HUNTER:
-     break;
+        switch (auraSpellInfo->Id)
+        {
+            // Patch 1.9: Aspect of the Pack and Aspect of the Cheetah - Periodic damage will no longer trigger the Dazed effect.
+            case 5118:  // Aspect of the Cheetah
+            case 13159: // Aspect of the Pack
+                if (procFlags & (PROC_FLAG_ON_DO_PERIODIC | PROC_FLAG_ON_TAKE_PERIODIC))
+                    return false;
+        }
+        break;
      //=====================================================================
      // Paladin
      // ====================================================================
@@ -6592,12 +6564,10 @@ bool Unit::HandleProcTriggerSpell(Unit *pVictim, uint32 damage, Aura* triggeredB
                  case 20344: trigger_spell_id = 20341;break; // Rank 2
                  case 20345: trigger_spell_id = 20342;break; // Rank 3
                  case 20346: trigger_spell_id = 20343;break; // Rank 4
-                 case 27162: trigger_spell_id = 27163;break; // Rank 5
                  // Judgement of Wisdom
                  case 20186: trigger_spell_id = 20268;break; // Rank 1
                  case 20354: trigger_spell_id = 20352;break; // Rank 2
                  case 20355: trigger_spell_id = 20353;break; // Rank 3
-                 case 27164: trigger_spell_id = 27165;break; // Rank 4
                  default:
                      sLog.outError("Unit::HandleProcTriggerSpell: Spell %u miss posibly Judgement of Light/Wisdom", auraSpellInfo->Id);
                  return false;
@@ -6680,8 +6650,6 @@ bool Unit::HandleProcTriggerSpell(Unit *pVictim, uint32 damage, Aura* triggeredB
                  case  8134: trigger_spell_id = 26369; break;  // Rank 5
                  case 10431: trigger_spell_id = 26370; break;  // Rank 6
                  case 10432: trigger_spell_id = 26363; break;  // Rank 7
-                 case 25469: trigger_spell_id = 26371; break;  // Rank 8
-                 case 25472: trigger_spell_id = 26372; break;  // Rank 9
                  default:
                      sLog.outError("Unit::HandleProcTriggerSpell: Spell %u not handled in LShield", auraSpellInfo->Id);
                  return false;
@@ -6804,8 +6772,6 @@ bool Unit::HandleProcTriggerSpell(Unit *pVictim, uint32 damage, Aura* triggeredB
     {
         // Cast positive spell on enemy target
         case 7099:  // Curse of Mending
-        case 39647: // Curse of Mending
-        case 29494: // Temptation
         case 20233: // Improved Lay on Hands (cast on target)
         {
             target = pVictim;
@@ -6823,20 +6789,6 @@ bool Unit::HandleProcTriggerSpell(Unit *pVictim, uint32 damage, Aura* triggeredB
         case 14157: // Ruthlessness
         {
             // Need add combopoint AFTER finish movie (or they dropped in finish phase)
-            break;
-        }
-        // Shamanistic Rage triggered spell
-        case 30824:
-        {
-            basepoints0 = int32(GetTotalAttackPowerValue(BASE_ATTACK) * triggerAmount / 100);
-            trigger_spell_id = 30824;
-            break;
-        }
-        // Enlightenment (trigger only from mana cost spells)
-        case 35095:
-        {
-            if(!procSpell || procSpell->powerType!=POWER_MANA || procSpell->manaCost==0 && procSpell->ManaCostPercentage==0 && procSpell->manaCostPerlevel==0)
-                return false;
             break;
         }
     }
@@ -6910,6 +6862,11 @@ bool Unit::HandleOverrideClassScriptAuraProc(Unit *pVictim, Aura *triggeredByAur
             triggered_spell_id = 24406;
             break;
         }
+        case 4309:                                           // Crepuscule
+        {
+            triggered_spell_id = 17941;
+            break;
+        }
         case 4533:                                          // Dreamwalker Raiment 2 pieces bonus
         {
             // Chance 50%
@@ -6928,9 +6885,6 @@ bool Unit::HandleOverrideClassScriptAuraProc(Unit *pVictim, Aura *triggeredByAur
         }
         case 4537:                                          // Dreamwalker Raiment 6 pieces bonus
             triggered_spell_id = 28750;                     // Blessing of the Claw
-            break;
-        case 5497:                                          // Improved Mana Gems (Serpent-Coil Braid)
-            triggered_spell_id = 37445;                     // Mana Surge
             break;
     }
 
