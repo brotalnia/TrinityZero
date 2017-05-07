@@ -377,7 +377,7 @@ void Unit::SendMonsterMove(float NewPosX, float NewPosY, float NewPosZ, uint32 T
     data << getMSTime();
 
     data << uint8(0);
-    data << uint32(MOVEFLAG_WALK);
+    data << uint32(((GetUnitMovementFlags() & MOVEMENTFLAG_LEVITATING) || isInFlight())? (MOVEFLAG_FLY|MOVEFLAG_WALK) : MOVEFLAG_WALK);
 
     data << Time;                                           // Time in between points
     data << uint32(1);                                      // 1 single waypoint
@@ -11027,8 +11027,9 @@ void Unit::SendPetCastFail(uint32 spellid, uint8 msg)
     if(!owner || owner->GetTypeId() != TYPEID_PLAYER)
         return;
 
-    WorldPacket data(SMSG_PET_CAST_FAILED, (4+1));
+    WorldPacket data(SMSG_PET_CAST_FAILED, (4+1+1));
     data << uint32(spellid);
+    data << uint8(2); // 1.12: As SMSG_CAST_FAILED i suppose. 2 = failed, 0 = successful.
     data << uint8(msg);
     ((Player*)owner)->GetSession()->SendPacket(&data);
 }

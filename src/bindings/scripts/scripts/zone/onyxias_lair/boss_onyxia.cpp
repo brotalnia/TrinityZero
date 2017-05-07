@@ -18,7 +18,7 @@
 /* ScriptData
 SDName: Boss_Onyxia
 SD%Complete: 95
-SDComment: Flying animation is missing, Onyxia walks in the air instead.
+SDComment: Lift off animation looks kinda weird.
 SDCategory: Onyxia's Lair
 EndScriptData
 */

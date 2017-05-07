@@ -1703,6 +1703,23 @@ void Creature::setDeathState(DeathState s)
 
 bool Creature::FallGround()
 {
+    // Falling to target's height.
+    Unit * victim = this->getVictim();
+
+    if (!victim)
+        return false;
+    
+    float my_z = GetPositionZ();
+    float victim_z = victim->GetPositionZ();
+
+    if ((fabs(victim_z - my_z) < 0.1f) || (victim_z > my_z))
+        return false;
+
+    GetMotionMaster()->MoveFall(victim_z, EVENT_FALL_GROUND);
+    Unit::setDeathState(DEAD_FALLING);
+    return true;
+
+    /* THIS MAKES MOBS FALL TO -200000 ON DEATH :O
     // Let's abort after we called this function one time
     if (getDeathState() == DEAD_FALLING)
         return false;
@@ -1715,7 +1732,7 @@ bool Creature::FallGround()
 
     GetMotionMaster()->MoveFall(ground_Z, EVENT_FALL_GROUND);
     Unit::setDeathState(DEAD_FALLING);
-    return true;
+    return true;*/
 }
 
 void Creature::Respawn()
