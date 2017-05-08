@@ -391,7 +391,7 @@ Spell::Spell( Unit* Caster, SpellEntry const *info, bool triggered, uint64 origi
             if(!IsPositiveTarget(m_spellInfo->EffectImplicitTargetA[j],m_spellInfo->EffectImplicitTargetB[j]))
                 m_canReflect = true;
             else
-                m_canReflect = (m_spellInfo->AttributesEx & SPELL_ATTR_EX_NEGATIVE) ? true : false;
+                m_canReflect = (m_spellInfo->AttributesEx & SPELL_ATTR_EX_CANT_BE_REFLECTED) ? true : false;
 
             if(m_canReflect)
                 continue;
@@ -682,8 +682,17 @@ void Spell::prepareDataForTriggerSystem()
             m_procVictim   = PROC_FLAG_TAKEN_MELEE_SPELL_HIT;
             break;
         case SPELL_DAMAGE_CLASS_RANGED:
-            m_procAttacker = PROC_FLAG_SUCCESSFUL_RANGED_SPELL_HIT;
-            m_procVictim   = PROC_FLAG_TAKEN_RANGED_SPELL_HIT;
+            // Auto shoot
+            if (m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_AUTOREPEAT_FLAG)
+            {
+                m_procAttacker = PROC_FLAG_SUCCESSFUL_RANGED_HIT;
+                m_procVictim   = PROC_FLAG_TAKEN_RANGED_HIT;
+            }
+            else // Ranged spell attack
+            {
+                m_procAttacker = PROC_FLAG_SUCCESSFUL_RANGED_SPELL_HIT;
+                m_procVictim   = PROC_FLAG_TAKEN_RANGED_SPELL_HIT;
+            }
             break;
         default:
             if (IsPositiveSpell(m_spellInfo->Id))          // Check for positive spell
@@ -691,10 +700,11 @@ void Spell::prepareDataForTriggerSystem()
                 m_procAttacker = PROC_FLAG_SUCCESSFUL_POSITIVE_SPELL;
                 m_procVictim   = PROC_FLAG_TAKEN_POSITIVE_SPELL;
             }
-            else if (m_spellInfo->Id == 5019) // Wands
+            // Wands auto attack
+            else if (m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_AUTOREPEAT_FLAG)
             {
-                m_procAttacker = PROC_FLAG_SUCCESSFUL_RANGED_SPELL_HIT;
-                m_procVictim   = PROC_FLAG_TAKEN_RANGED_SPELL_HIT;
+                m_procAttacker = PROC_FLAG_SUCCESSFUL_RANGED_HIT;
+                m_procVictim   = PROC_FLAG_TAKEN_RANGED_HIT;
             }
             else
             {
@@ -1418,7 +1428,7 @@ void Spell::SearchChainTarget(std::list<Unit*> &TagUnitMap, float max_range, uin
         {
             next = tempUnitMap.begin();
             while(cur->GetDistance(*next) > CHAIN_SPELL_JUMP_RADIUS
-                || !cur->IsWithinLOSInMap(*next))
+                || (!(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LOS) && !cur->IsWithinLOSInMap(*next)))
             {
                 ++next;
                 if(next == tempUnitMap.end())
@@ -1435,7 +1445,7 @@ void Spell::SearchChainTarget(std::list<Unit*> &TagUnitMap, float max_range, uin
         while(m_spellInfo->DmgClass == SPELL_DAMAGE_CLASS_MELEE
                 && !m_caster->isInFront(*next, max_range)
                 || !m_caster->canSeeOrDetect(*next, false)
-                || !cur->IsWithinLOSInMap(*next))
+                || (!(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LOS) && !cur->IsWithinLOSInMap(*next)))
             {
                 ++next;
                 if(next == tempUnitMap.end() || cur->GetDistance(*next) > CHAIN_SPELL_JUMP_RADIUS)
@@ -3456,11 +3466,11 @@ SpellCastResult Spell::CheckCast(bool strict)
         if(target != m_caster)
         {
 
-            // Not allow casting on flying player
-            if (target->isInFlight())
+            // Not allow casting on flying player unless its a ritual of summoning
+            if (target->isInFlight() && m_spellInfo->Id != 7720)
                 return SPELL_FAILED_BAD_TARGETS;
 
-            if(!m_IsTriggeredSpell && VMAP::VMapFactory::checkSpellForLoS(m_spellInfo->Id) && !m_caster->IsWithinLOSInMap(target))
+            if(!m_IsTriggeredSpell && VMAP::VMapFactory::checkSpellForLoS(m_spellInfo->Id) && !(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LOS) && !m_caster->IsWithinLOSInMap(target))
                 return SPELL_FAILED_LINE_OF_SIGHT;
 
             // auto selection spell rank implemented in WorldSession::HandleCastSpellOpcode
@@ -5100,7 +5110,7 @@ bool Spell::CheckTarget(Unit* target, uint32 eff)
             //fall through
         case SPELL_EFFECT_RESURRECT_NEW:
             // player far away, maybe his corpse near?
-            if(target!=m_caster && !target->IsWithinLOSInMap(m_caster))
+            if((target!=m_caster) && !(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LOS) && !target->IsWithinLOSInMap(m_caster))
             {
                 if(!m_targets.getCorpseTargetGUID())
                     return false;
@@ -5112,14 +5122,14 @@ bool Spell::CheckTarget(Unit* target, uint32 eff)
                 if(target->GetGUID()!=corpse->GetOwnerGUID())
                     return false;
 
-                if(!corpse->IsWithinLOSInMap(m_caster))
+                if(!(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LOS) && !corpse->IsWithinLOSInMap(m_caster))
                     return false;
             }
 
             // all ok by some way or another, skip normal check
             break;
         default:                                            // normal case
-            if(target!=m_caster && !target->IsWithinLOSInMap(m_caster))
+            if((target!=m_caster) && !(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LOS) && !target->IsWithinLOSInMap(m_caster))
                 return false;
             break;
     }
