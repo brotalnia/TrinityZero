@@ -630,7 +630,9 @@ void Spell::prepareDataForTriggerSystem()
     //==========================================================================================
 
     // Fill flag can spell trigger or not
-    if (!m_IsTriggeredSpell)
+    if (m_spellInfo->AttributesEx3 & SPELL_ATTR_EX3_CANT_TRIGGER_PROC)
+        m_canTrigger = false;         // Explicitly not allowed to trigger
+    else if (!m_IsTriggeredSpell)
         m_canTrigger = true;          // Normal cast - can trigger
     else if (!m_triggeredByAuraSpell)
         m_canTrigger = true;          // Triggered from SPELL_EFFECT_TRIGGER_SPELL - can trigger
@@ -3463,6 +3465,9 @@ SpellCastResult Spell::CheckCast(bool strict)
                 return SPELL_FAILED_TARGET_AURASTATE;
         }
 
+        if (!m_IsTriggeredSpell && IsDeathOnlySpell(m_spellInfo) && target->isAlive())
+            return SPELL_FAILED_TARGET_IS_ALIVE;
+
         if(target != m_caster)
         {
 
@@ -3472,6 +3477,9 @@ SpellCastResult Spell::CheckCast(bool strict)
 
             if(!m_IsTriggeredSpell && VMAP::VMapFactory::checkSpellForLoS(m_spellInfo->Id) && !(m_spellInfo->AttributesEx2 & SPELL_ATTR_EX2_IGNORE_LOS) && !m_caster->IsWithinLOSInMap(target))
                 return SPELL_FAILED_LINE_OF_SIGHT;
+
+            if (!m_IsTriggeredSpell && strict && (m_spellInfo->AttributesEx3 & SPELL_ATTR_EX3_PLAYERS_ONLY) && (target->GetTypeId() != TYPEID_PLAYER) && !IsAreaOfEffectSpell(m_spellInfo))
+                return SPELL_FAILED_BAD_TARGETS;
 
             // auto selection spell rank implemented in WorldSession::HandleCastSpellOpcode
             // this case can be triggered if rank not found (too low-level target for first rank)
@@ -5133,6 +5141,9 @@ bool Spell::CheckTarget(Unit* target, uint32 eff)
                 return false;
             break;
     }
+
+    if ((target->GetTypeId() != TYPEID_PLAYER) && (m_spellInfo->AttributesEx3 & SPELL_ATTR_EX3_PLAYERS_ONLY) && (m_spellInfo->EffectImplicitTargetA[eff] != TARGET_UNIT_CASTER))
+        return false;
 
     return true;
 }

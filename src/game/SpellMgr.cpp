@@ -2390,7 +2390,7 @@ void SpellMgr::LoadSpellCustomAttr()
 		case 20661:
 		case 20662:
 			spellInfo->Attributes |= SPELL_ATTR_IMPOSSIBLE_DODGE_PARRY_BLOCK;
-            spellInfo->AttributesEx3 |= SPELL_ATTR_EX3_UNK18;                
+            spellInfo->AttributesEx3 |= SPELL_ATTR_EX3_CANT_MISS;                
 			break;
         case 24531: //Refocus
             spellInfo->EffectImplicitTargetA[0] = TARGET_UNIT_CASTER;

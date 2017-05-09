@@ -628,6 +628,10 @@ void AreaAura::Update(uint32 diff)
                 if((*tIter)->HasAura(GetId(), m_effIndex))
                     continue;
 
+                // Skip some targets (TODO: Might require better checks, also unclear how the actual caster must/can be handled)
+                if ((GetSpellProto()->AttributesEx3 & SPELL_ATTR_EX3_PLAYERS_ONLY) && ((*tIter)->GetTypeId() != TYPEID_PLAYER))
+                    continue;
+
                 if(SpellEntry const *actualSpellInfo = spellmgr.SelectAuraRankForPlayerLevel(GetSpellProto(), (*tIter)->getLevel()))
                 {
                     //int32 actualBasePoints = m_currentBasePoints;
