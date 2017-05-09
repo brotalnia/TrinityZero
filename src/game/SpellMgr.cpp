@@ -601,17 +601,8 @@ bool IsPositiveEffect(uint32 spellId, uint32 effIndex)
     {
         case 23333:                                         // BG spell
         case 23335:                                         // BG spell
-        case 34976:                                         // BG spell
-        case 31579:                                         // Arcane Empowerment Rank1 talent aura with one positive and one negative (check not needed in wotlk)
-        case 31582:                                         // Arcane Empowerment Rank2
-        case 31583:                                         // Arcane Empowerment Rank3
             return true;
         case 28441:                                         // not positive dummy spell
-        case 37675:                                         // Chaos Blast
-        case 41519:                                         // Mark of Stormrage
-        case 34877:                                         // Custodian of Time
-        case 34700:                                         // Allergic Reaction
-        case 31719:                                         // Suspension
             return false;
     }
 
@@ -638,9 +629,6 @@ bool IsPositiveEffect(uint32 spellId, uint32 effIndex)
                     {
                         case 13139:                         // net-o-matic special effect
                         case 23445:                         // evil twin
-                        case 38637:                         // Nether Exhaustion (red)
-                        case 38638:                         // Nether Exhaustion (green)
-                        case 38639:                         // Nether Exhaustion (blue)
                             return false;
                         default:
                             break;
@@ -706,26 +694,6 @@ bool IsPositiveEffect(uint32 spellId, uint32 effIndex)
                     // but not this if this first effect (don't found batter check)
                     if(spellproto->Attributes & 0x4000000 && effIndex==0)
                         return false;
-                    break;
-                case SPELL_AURA_TRANSFORM:
-                    // some spells negative
-                    switch(spellproto->Id)
-                    {
-                        case 36897:                         // Transporter Malfunction (race mutation to horde)
-                        case 36899:                         // Transporter Malfunction (race mutation to alliance)
-                            return false;
-                    }
-                    break;
-                case SPELL_AURA_MOD_SCALE:
-                    // some spells negative
-                    switch(spellproto->Id)
-                    {
-                        case 36900:                         // Soul Split: Evil!
-                        case 36901:                         // Soul Split: Good
-                        case 36893:                         // Transporter Malfunction (decrease size case)
-                        case 36895:                         // Transporter Malfunction (increase size case)
-                            return false;
-                    }
                     break;
                 case SPELL_AURA_MECHANIC_IMMUNITY:
                 {
@@ -2292,97 +2260,41 @@ void SpellMgr::LoadSpellCustomAttr()
         switch(i)
         {            // [TZERO] Tame beast + quest spells
             case 1515:      case 19548:     case 19674:     case 19687:     case 19688:     case 19689:     case 19692:
-            case 19693:    case 19694:     case 19696:     case 19697:     case 19699:     case 19700:     case 30646:
-            case 30653:    case 30654:     case 30099:     case 30102:     case 30105:
-                    {
-                    uint32 triggerSpell = 0;
-                    switch(i)
-                    {
-                case 1515:      triggerSpell = 13481;     break;
-                case 19548:     triggerSpell = 19597;     break;
-                case 19674:     triggerSpell = 19677;     break;
-                case 19687:     triggerSpell = 19676;     break;
-                case 19688:     triggerSpell = 19678;     break;
-                case 19689:     triggerSpell = 19679;     break;
-                case 19692:     triggerSpell = 19680;     break;
-                case 19693:     triggerSpell = 19684;     break;
-                case 19694:     triggerSpell = 19681;     break;
-                case 19696:     triggerSpell = 19682;     break;
-                case 19697:     triggerSpell = 19683;     break;
-                case 19699:     triggerSpell = 19685;     break;
-                case 19700:     triggerSpell = 19686;     break;
-                /*case 30646:     triggerSpell = 30647;    break;        // [TZERO]These are all TBC
-                case 30653:     triggerSpell = 30648;     break;
-                case 30654:     triggerSpell = 30652;     break;
-                case 30099:     triggerSpell = 30100;     break;
-                case 30102:     triggerSpell = 30103;     break;
-                case 30105:     triggerSpell = 30104;     break;    */
-           }
+            case 19693:    case 19694:     case 19696:     case 19697:     case 19699:     case 19700:
+            {
+                uint32 triggerSpell = 0;
+                switch(i)
+                {
+                    case 1515:      triggerSpell = 13481;     break;
+                    case 19548:     triggerSpell = 19597;     break;
+                    case 19674:     triggerSpell = 19677;     break;
+                    case 19687:     triggerSpell = 19676;     break;
+                    case 19688:     triggerSpell = 19678;     break;
+                    case 19689:     triggerSpell = 19679;     break;
+                    case 19692:     triggerSpell = 19680;     break;
+                    case 19693:     triggerSpell = 19684;     break;
+                    case 19694:     triggerSpell = 19681;     break;
+                    case 19696:     triggerSpell = 19682;     break;
+                    case 19697:     triggerSpell = 19683;     break;
+                    case 19699:     triggerSpell = 19685;     break;
+                    case 19700:     triggerSpell = 19686;     break;
+                }
                 spellInfo->EffectTriggerSpell[1] = triggerSpell;
                 spellInfo->EffectAmplitude[1] = 20000;
                 spellInfo->EffectMiscValue[2] = 1;
                 spellInfo->EffectApplyAuraName[1] = SPELL_AURA_PERIODIC_TRIGGER_SPELL;
                 break;
-                }
+            }
         case 26029: // dark glare
-        case 37433: // spout
-        case 43140: case 43215: // flame breath
             mSpellCustomAttr[i] |= SPELL_ATTR_CU_CONE_LINE;
             break;
         case 24340: case 26558: case 28884:     // Meteor
-        case 36837: case 38903: case 41276:     // Meteor
         case 26789:                             // Shard of the Fallen Star
-        case 31436:                             // Malevolent Cleave
-        case 35181:                             // Dive Bomb
-        case 40810: case 43267: case 43268:     // Saber Lash
-        case 42384:                             // Brutal Swipe
-        case 45150:                             // Meteor Slash
             mSpellCustomAttr[i] |= SPELL_ATTR_CU_SHARE_DAMAGE;
-            break;
-        case 44978: case 45001: case 45002:     // Wild Magic
-        case 45004: case 45006: case 45010:     // Wild Magic
-        case 31347: // Doom
-        case 41635: // Prayer of Mending
-        case 44869: // Spectral Blast
-        case 45027: // Revitalize
-        case 45976: // Muru Portal Channel
-        case 39365: // Thundering Storm
-        case 41071: // Raise Dead
-            spellInfo->MaxAffectedTargets = 1;
-            break;
-        case 41376: // Spite
-        case 39992: // Needle Spine
-        case 29576: //Multi-Shot
-        case 40816: //Saber Lash
-        case 37790: //Spread Shot
-        case 46771: //Flame Sear
-        case 45248: //Shadow Blades
-        case 41303: // Soul Drain
-            spellInfo->MaxAffectedTargets = 3;
-            break;
-        case 38310: //Multi-Shot
-            spellInfo->MaxAffectedTargets = 4;
-            break;
-        case 42005: // Bloodboil
-        case 38296: //Spitfire Totem
-        case 37676: //Insidious Whisper
-        case 46009: //Negative Energy
-        case 45641: //Fire Bloom
-            spellInfo->MaxAffectedTargets = 5;
-            break;
-        case 40827: //Sinful Beam
-        case 40859: //Sinister Beam
-        case 40860: //Vile Beam
-        case 40861: //Wicked Beam
-            spellInfo->MaxAffectedTargets = 10;
             break;
         case 8122: case 8124: case 10888: case 10890: // Psychic Scream
         case 12494: // Frostbite
             spellInfo->Attributes |= SPELL_ATTR_BREAKABLE_BY_DAMAGE;
-            break;
-        case 38794: case 33711: //Murmur's Touch
-            spellInfo->MaxAffectedTargets = 1;
-            spellInfo->EffectTriggerSpell[0] = 33760;
             break;
 		case 5308: //Execute
 		case 20658:
