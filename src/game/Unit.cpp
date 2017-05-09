@@ -2789,7 +2789,7 @@ SpellMissInfo Unit::MeleeSpellHitResult(Unit *pVictim, SpellEntry const *spell)
     uint32 missChance = uint32(MeleeSpellMissChance(pVictim, attType, fullSkillDiff, spell->Id)*100.0f);
 
     // Roll miss
-    uint32 tmp = missChance;
+    uint32 tmp = spell->AttributesEx3 & SPELL_ATTR_EX3_CANT_MISS ? 0 : missChance;
     if (roll < tmp)
         return SPELL_MISS_MISS;
 
@@ -2836,7 +2836,7 @@ SpellMissInfo Unit::MeleeSpellHitResult(Unit *pVictim, SpellEntry const *spell)
     // Roll parry
     int32 parryChance = int32(pVictim->GetUnitParryChance()*100.0f)  - skillDiff * 4;
     // Can`t parry from behind
-    if (parryChance < 0 || attackFromBehind)
+    if (parryChance < 0 || attackFromBehind || ((pVictim->GetTypeId() == TYPEID_PLAYER) && !((Player*)pVictim)->CanParry()))
         parryChance = 0;
 
     tmp += parryChance;
@@ -3156,8 +3156,6 @@ float Unit::GetUnitCriticalChance(WeaponAttackType attackType, const Unit *pVict
         switch(attackType)
         {
             case BASE_ATTACK:
-                crit = GetFloatValue( PLAYER_CRIT_PERCENTAGE );
-                break;
             case OFF_ATTACK:
                 crit = GetFloatValue( PLAYER_CRIT_PERCENTAGE );
                 break;

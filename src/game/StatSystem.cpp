@@ -458,22 +458,41 @@ void Player::UpdateCritPercentage(WeaponAttackType attType)
 
     switch(attType)
     {
-        case OFF_ATTACK:
-            modGroup = OFFHAND_CRIT_PERCENTAGE;  // [TZERO] PLAYER_CRIT_PERCENTAGE
-            index = PLAYER_CRIT_PERCENTAGE;
-            break;
         case RANGED_ATTACK:
             modGroup = RANGED_CRIT_PERCENTAGE;
             index = PLAYER_RANGED_CRIT_PERCENTAGE;
             break;
         case BASE_ATTACK:
-        default:
             modGroup = CRIT_PERCENTAGE;
             index = PLAYER_CRIT_PERCENTAGE;
             break;
+        case OFF_ATTACK:                                    // client have only main hand crit
+        default:
+            return;
     }
 
     float value = GetTotalPercentageModValue(modGroup);
+    switch (getClass())
+    {
+        case CLASS_DRUID:
+            value += 0.9f;
+            break;
+        case CLASS_MAGE:
+            value += 3.2f;
+            break;
+        case CLASS_PALADIN:
+            value += 0.7f;
+            break;
+        case CLASS_PRIEST:
+            value += 3.0f;
+            break;
+        case CLASS_SHAMAN:
+            value += 1.7f;
+            break;
+        case CLASS_WARLOCK:
+            value += 2.0f;
+            break;
+    }
     // Modify crit from weapon skill and maximized defense skill of same level victim difference
     value += (int32(GetWeaponSkillValue(attType)) - int32(GetMaxSkillValueForLevel())) * 0.04f;
     value = value < 0.0f ? 0.0f : value;
