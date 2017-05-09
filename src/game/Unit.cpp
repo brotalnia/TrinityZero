@@ -6737,34 +6737,11 @@ bool Unit::HandleProcTriggerSpell(Unit *pVictim, uint32 damage, Aura* triggeredB
             target = this;
             trigger_spell_id = 22588;
         }
-        // Greater Heal Refund (Avatar Raiment set)
-        case 37594:
-        {
-            // Not give if target alredy have full health
-            if (pVictim->GetHealth() == pVictim->GetMaxHealth())
-                return false;
-            // If your Greater Heal brings the target to full health, you gain $37595s1 mana.
-            if (pVictim->GetHealth() + damage < pVictim->GetMaxHealth())
-                return false;
-            break;
-        }
-        // Bonus Healing (Crystal Spire of Karabor mace)
-        case 40971:
-        {
-            // If your target is below $s1% health
-            if (pVictim->GetHealth() > pVictim->GetMaxHealth() * triggerAmount / 100)
-                return false;
-            break;
-        }
-        // Evasive Maneuvers (Commendation of Kael`thas trinket)
-        case 45057:
-        {
-            // reduce you below $s1% health
-            if (GetHealth() - damage > GetMaxHealth() * triggerAmount / 100)
-                return false;
-            break;
-        }
     }
+
+    // not allow proc extra attack spell at extra attack
+    if (m_extraAttacks && IsSpellHaveEffect(triggerEntry, SPELL_EFFECT_ADD_EXTRA_ATTACKS) && triggerEntry->Id != 20178)
+        return false;
 
     // Costum basepoints/target for exist spell
     // dummy basepoints or other customs
