@@ -4282,86 +4282,90 @@ uint32 Player::GetShieldBlockValue() const
 
 float Player::GetMeleeCritFromAgility()
 {
-  // from mangos 3462 for 1.12
-  float val=0,classrate = 0;
+    float valLevel1 = 0.0f;
+    float valLevel60 = 0.0f;
     // critical
-    switch(getClass())
+    switch (getClass())
     {
-        case CLASS_PALADIN: classrate = 19.77; break;
-        case CLASS_SHAMAN:  classrate = 19.7;  break;
-        case CLASS_MAGE:    classrate = 19.44; break;
-        case CLASS_ROGUE:   classrate = 29.0;  break;
-        case CLASS_HUNTER:  classrate = 53.0;  break;       // in 2.0.x = 33
-        case CLASS_PRIEST:
-        case CLASS_WARLOCK:
+        case CLASS_PALADIN:
+        case CLASS_SHAMAN:
         case CLASS_DRUID:
+            valLevel1 = 4.6f;
+            valLevel60 = 20.0f;
+            break;
+        case CLASS_MAGE:
+            valLevel1 = 12.9f;
+            valLevel60 = 20.0f;
+            break;
+        case CLASS_ROGUE:
+            valLevel1 = 2.2f;
+            valLevel60 = 29.0f;
+            break;
+        case CLASS_HUNTER:
+            valLevel1 = 3.5f;
+            valLevel60 = 53.0f;
+            break;
+        case CLASS_PRIEST:
+            valLevel1 = 11.0f;
+            valLevel60 = 20.0f;
+            break;
+        case CLASS_WARLOCK:
+            valLevel1 = 8.4f;
+            valLevel60 = 20.0f;
+            break;
         case CLASS_WARRIOR:
-        default:            classrate = 20.0; break;
+            valLevel1 = 3.9f;
+            valLevel60 = 20.0f;
+            break;
+        default:
+            return 0.0f;
     }
-
-    val = GetStat(STAT_AGILITY)/classrate;
-  return val;
+    float classrate = valLevel1 * float(60.0f - getLevel()) / 59.0f + valLevel60 * float(getLevel() - 1.0f) / 59.0f;
+    return GetStat(STAT_AGILITY) / classrate;
 }
 
 float Player::GetDodgeFromAgility()
 {
-     // from mangos 3462 for 1.12
-    float val=0,classrate=0;
-
-    //dodge
-    if(getClass() == CLASS_HUNTER) classrate = 26.5;
-    else if(getClass() == CLASS_ROGUE)  classrate = 14.5;
-    else classrate = 20;
-    ///*+(Defense*0,04);
-    if (getRace() == RACE_NIGHTELF)
-        val = GetStat(STAT_AGILITY)/classrate + 1;
-    else
-        val = GetStat(STAT_AGILITY)/classrate;
-
-    return val;
-
-  /* [TZERO]
-    // Table for base dodge values
-    float dodge_base[MAX_CLASSES] = {
-         0.0075f,   // Warrior
-         0.00652f,  // Paladin
-        -0.0545f,   // Hunter
-        -0.0059f,   // Rogue
-         0.03183f,  // Priest
-         0.0114f,   // DK
-         0.0167f,   // Shaman
-         0.034575f, // Mage
-         0.02011f,  // Warlock
-         0.0f,      // ??
-        -0.0187f    // Druid
-    };
-    // Crit/agility to dodge/agility coefficient multipliers
-    float crit_to_dodge[MAX_CLASSES] = {
-         1.1f,      // Warrior
-         1.0f,      // Paladin
-         1.6f,      // Hunter
-         2.0f,      // Rogue
-         1.0f,      // Priest
-         1.0f,      // DK?
-         1.0f,      // Shaman
-         1.0f,      // Mage
-         1.0f,      // Warlock
-         0.0f,      // ??
-         1.7f       // Druid
-    };
-
-    uint32 level = getLevel();
-    uint32 pclass = getClass();
-
-    if (level>GT_MAX_LEVEL) level = GT_MAX_LEVEL;
-
-    // Dodge per agility for most classes equal crit per agility (but for some classes need apply some multiplier)
-    GtChanceToMeleeCritEntry  const *dodgeRatio = sGtChanceToMeleeCritStore.LookupEntry((pclass-1)*GT_MAX_LEVEL + level-1);
-    if (dodgeRatio==NULL || pclass > MAX_CLASSES)
-        return 0.0f;
-
-    float dodge=dodge_base[pclass-1] + GetStat(STAT_AGILITY) * dodgeRatio->ratio * crit_to_dodge[pclass-1];
-    return dodge*100.0f; */
+    float valLevel1 = 0.0f;
+    float valLevel60 = 0.0f;
+    // critical
+    switch (getClass())
+    {
+        case CLASS_PALADIN:
+        case CLASS_SHAMAN:
+        case CLASS_DRUID:
+            valLevel1 = 4.6f;
+            valLevel60 = 20.0f;
+            break;
+        case CLASS_MAGE:
+            valLevel1 = 12.9f;
+            valLevel60 = 20.0f;
+            break;
+        case CLASS_ROGUE:
+            valLevel1 = 1.1f;
+            valLevel60 = 14.5f;
+            break;
+        case CLASS_HUNTER:
+            valLevel1 = 1.8f;
+            valLevel60 = 26.5f;
+            break;
+        case CLASS_PRIEST:
+            valLevel1 = 11.0f;
+            valLevel60 = 20.0f;
+            break;
+        case CLASS_WARLOCK:
+            valLevel1 = 8.4f;
+            valLevel60 = 20.0f;
+            break;
+        case CLASS_WARRIOR:
+            valLevel1 = 3.9f;
+            valLevel60 = 20.0f;
+            break;
+        default:
+            return 0.0f;
+    }
+    float classrate = valLevel1 * float(60.0f - getLevel()) / 59.0f + valLevel60 * float(getLevel() - 1.0f) / 59.0f;
+    return GetStat(STAT_AGILITY) / classrate;
 }
 
 float Player::GetSpellCritFromIntellect()
